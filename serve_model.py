@@ -5,8 +5,6 @@ from flask_cors import CORS
 from pandas import DataFrame
 import joblib
 import pandas as pd
-from sklearn.decomposition import PCA
-import numpy as np
 
 from src.data_utils import load_model, load_config
 
@@ -144,4 +142,4 @@ def get_data():
 
 if __name__ == '__main__':
     logger.info("Starting Flask app")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)

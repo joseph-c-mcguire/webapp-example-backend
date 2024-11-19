@@ -1,2 +1,2 @@
-serve: python serve_model.py
+web: python serve_model.py
 train: python train_model.py
