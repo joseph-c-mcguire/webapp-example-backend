@@ -8,7 +8,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def split_data(data_file_path, train_val_file_path, test_file_path, test_size=0.2, random_state=42):
+def split_data(
+    data_file_path, train_val_file_path, test_file_path, test_size=0.2, random_state=42
+):
     """
     Split the data into training/validation and testing sets and save them to separate files.
 
@@ -28,7 +30,8 @@ def split_data(data_file_path, train_val_file_path, test_file_path, test_size=0.
 
     # Split the data into training/validation and testing sets
     train_val_data, test_data = train_test_split(
-        df, test_size=test_size, random_state=random_state)
+        df, test_size=test_size, random_state=random_state
+    )
 
     # Save the split datasets to separate files
     train_val_data.to_csv(train_val_file_path, index=False)
@@ -40,12 +43,13 @@ def split_data(data_file_path, train_val_file_path, test_file_path, test_size=0.
 
 if __name__ == "__main__":
     # Define file paths
-    data_file_path = os.path.join(os.path.dirname(
-        __file__), 'data', 'predictive_maintenance.csv')
+    data_file_path = os.path.join(
+        os.path.dirname(__file__), "data", "predictive_maintenance.csv"
+    )
     train_val_file_path = os.path.join(
-        os.path.dirname(__file__), 'data', 'train_val_data.csv')
-    test_file_path = os.path.join(
-        os.path.dirname(__file__), 'data', 'test_data.csv')
+        os.path.dirname(__file__), "data", "train_val_data.csv"
+    )
+    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
 
     # Call the split_data function
     split_data(data_file_path, train_val_file_path, test_file_path)

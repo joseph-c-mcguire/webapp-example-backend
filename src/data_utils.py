@@ -44,7 +44,7 @@ def load_config(file_path: str) -> Dict[str, Any]:
     """
     logger.info(f"Loading configuration from {file_path}")
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             config = safe_load(file)
         logger.info("Configuration loaded successfully")
         return config
@@ -77,7 +77,12 @@ def load_data(file_path: str) -> pd.DataFrame:
     return data
 
 
-def preprocess_data(data: pd.DataFrame, columns_to_drop: List[str] = None, columns_to_scale: List[str] = None, columns_to_encode: List[str] = None) -> Tuple[ColumnTransformer, np.ndarray]:
+def preprocess_data(
+    data: pd.DataFrame,
+    columns_to_drop: List[str] = None,
+    columns_to_scale: List[str] = None,
+    columns_to_encode: List[str] = None,
+) -> Tuple[ColumnTransformer, np.ndarray]:
     """
     Preprocess the dataset: handle missing values, outliers, and normalize the data.
 
@@ -105,9 +110,9 @@ def preprocess_data(data: pd.DataFrame, columns_to_drop: List[str] = None, colum
     # Create a column transformer
     preprocessor = ColumnTransformer(
         transformers=[
-            ('drop_columns', 'drop', columns_to_drop),
-            ('scale_columns', StandardScaler(), columns_to_scale),
-            ('encode_columns', OneHotEncoder(), columns_to_encode)
+            ("drop_columns", "drop", columns_to_drop),
+            ("scale_columns", StandardScaler(), columns_to_scale),
+            ("encode_columns", OneHotEncoder(), columns_to_encode),
         ]
     )
     # Fit the column transformer
@@ -136,12 +141,14 @@ def perform_eda(data: pd.DataFrame) -> None:
 
     # Plot heatmap of feature correlations
     plt.figure(figsize=(12, 8))
-    sns.heatmap(data.corr(), annot=True, cmap='coolwarm')
+    sns.heatmap(data.corr(), annot=True, cmap="coolwarm")
     plt.show()
     logger.info("EDA completed")
 
 
-def select_features(X: pd.DataFrame, y: pd.Series, preprocessor: ColumnTransformer) -> List[int]:
+def select_features(
+    X: pd.DataFrame, y: pd.Series, preprocessor: ColumnTransformer
+) -> List[int]:
     """
     Select the most relevant features using a Random Forest model.
 
@@ -168,7 +175,13 @@ def select_features(X: pd.DataFrame, y: pd.Series, preprocessor: ColumnTransform
     return selected_features
 
 
-def train_and_evaluate_model(X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, models: Dict[str, BaseEstimator]) -> Dict[str, Dict[str, Any]]:
+def train_and_evaluate_model(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    models: Dict[str, BaseEstimator],
+) -> Dict[str, Dict[str, Any]]:
     """
     Train and evaluate multiple machine learning models.
 
@@ -206,8 +219,8 @@ def train_and_evaluate_model(X_train: np.ndarray, y_train: np.ndarray, X_test: n
         y_proba = model.predict_proba(X_test)[:, 1]
 
         results[name] = {
-            'Classification Report': classification_report(y_test, y_pred),
-            'ROC AUC': roc_auc_score(y_test, y_proba)
+            "Classification Report": classification_report(y_test, y_pred),
+            "ROC AUC": roc_auc_score(y_test, y_proba),
         }
         logger.info(f"Evaluation of {name} completed")
 
@@ -215,7 +228,12 @@ def train_and_evaluate_model(X_train: np.ndarray, y_train: np.ndarray, X_test: n
     return results
 
 
-def tune_model(models: Dict[str, BaseEstimator], param_grids: Dict[str, dict], X_train: pd.DataFrame, y_train: pd.Series) -> BaseEstimator:
+def tune_model(
+    models: Dict[str, BaseEstimator],
+    param_grids: Dict[str, dict],
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+) -> BaseEstimator:
     """
     Perform hyperparameter tuning using GridSearchCV for multiple models.
 
@@ -247,7 +265,8 @@ def tune_model(models: Dict[str, BaseEstimator], param_grids: Dict[str, dict], X
         logger.info(f"Tuning {name}")
         param_grid = param_grids.get(name, {})
         grid_search = GridSearchCV(
-            estimator=model, param_grid=param_grid, cv=5, scoring='roc_auc', n_jobs=-1)
+            estimator=model, param_grid=param_grid, cv=5, scoring="roc_auc", n_jobs=-1
+        )
         grid_search.fit(X_train, y_train)
 
         if grid_search.best_score_ > best_score:
@@ -276,18 +295,18 @@ def interpret_model(model: BaseEstimator, X: pd.DataFrame) -> None:
     >>> model = RandomForestClassifier().fit(X_train, y_train)
     >>> interpret_model(model, X_test)
     """
-    logger.info(
-        f"Starting model interpretation for {model.__class__.__name__}")
+    logger.info(f"Starting model interpretation for {model.__class__.__name__}")
     explainer = shap.Explainer(model)
     shap_values = explainer(X)
 
     # Summary plot
     shap.summary_plot(shap_values, X)
-    logger.info(
-        f"Model interpretation for {model.__class__.__name__} completed")
+    logger.info(f"Model interpretation for {model.__class__.__name__} completed")
 
 
-def monitor_model_performance(model: BaseEstimator, X: pd.DataFrame, y: pd.Series) -> float:
+def monitor_model_performance(
+    model: BaseEstimator, X: pd.DataFrame, y: pd.Series
+) -> float:
     """
     Monitor the performance of the deployed model.
 

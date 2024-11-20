@@ -7,9 +7,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 import joblib
 
-from src.data_utils import (
-    load_data, load_config, tune_model, get_model
-)
+from src.data_utils import load_data, load_config, tune_model, get_model
 from src.ModelMonitor import ModelMonitor
 
 # Set up logging
@@ -40,23 +38,23 @@ def train_model(config_path: str):
     # Train-test split
     logger.info("Splitting data into train and test sets")
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, **config.get("train_test_split", {}))
+        X, y, **config.get("train_test_split", {})
+    )
 
     # Preprocess data using Pipeline
     logger.info("Setting up preprocessing pipeline")
     preprocessor = ColumnTransformer(
         transformers=[
-            ('drop_columns', 'drop', config.get("columns_to_drop", [])),
-            ('scale_columns', StandardScaler(),
-             config.get("columns_to_scale", [])),
-            ('encode_columns', OneHotEncoder(),
-             config.get("columns_to_encode", []))
+            ("drop_columns", "drop", config.get("columns_to_drop", [])),
+            ("scale_columns", StandardScaler(), config.get("columns_to_scale", [])),
+            ("encode_columns", OneHotEncoder(), config.get("columns_to_encode", [])),
         ]
     )
 
     # Define models and their hyperparameter grids
     models = {
-        model: get_model(**meta_params) for model, meta_params in config["models"].items()
+        model: get_model(**meta_params)
+        for model, meta_params in config["models"].items()
     }
 
     # Train and evaluate model
@@ -71,40 +69,38 @@ def train_model(config_path: str):
     # Tune model
     logger.info("Tuning models")
     best_model = tune_model(
-        models, config["param_grids"], preprocessor.fit_transform(X_train), y_train)
+        models, config["param_grids"], preprocessor.fit_transform(X_train), y_train
+    )
     logger.info(f"Best model: {best_model}")
 
     # Create a pipeline with the preprocessor and the best model
-    pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('model', best_model)
-    ])
+    pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("model", best_model)])
 
     # Save the pipeline
     logger.info("Saving the pipeline")
-    joblib.dump(pipeline, Path(config["model_directory"]) / 'best_model.pkl')
+    joblib.dump(pipeline, Path(config["model_directory"]) / "best_model.pkl")
 
     # Save the min and max values from the training data
-    min_max_values = {
-        'min': X_train.min().to_dict(),
-        'max': X_train.max().to_dict()
-    }
-    min_max_values_path = Path(
-        config["model_directory"]) / 'min_max_values.pkl'
+    min_max_values = {"min": X_train.min().to_dict(), "max": X_train.max().to_dict()}
+    min_max_values_path = Path(config["model_directory"]) / "min_max_values.pkl"
     logger.info(f"Saving the min and max values to {min_max_values_path}")
     joblib.dump(min_max_values, min_max_values_path)
 
     # Initialize and save the ModelMonitor
     logger.info("Initializing and saving the ModelMonitor")
-    monitor = ModelMonitor(
-        model=pipeline, X_train=preprocessor.transform(X_train))
-    joblib.dump(monitor, Path(config["model_directory"]) / 'model_monitor.pkl')
+    monitor = ModelMonitor(model=pipeline, X_train=preprocessor.transform(X_train))
+    joblib.dump(monitor, Path(config["model_directory"]) / "model_monitor.pkl")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Predictive Maintenance Model Training")
-    parser.add_argument('--config', default="train_model.yaml", type=str,
-                        help='Path to the configuration file')
+        description="Predictive Maintenance Model Training"
+    )
+    parser.add_argument(
+        "--config",
+        default="train_model.yaml",
+        type=str,
+        help="Path to the configuration file",
+    )
     args = parser.parse_args()
     train_model(args.config)
