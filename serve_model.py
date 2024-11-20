@@ -5,8 +5,15 @@ from flask_cors import CORS
 from pandas import DataFrame
 import joblib
 import pandas as pd
+import subprocess
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+import matplotlib.pyplot as plt
+import io
+import base64
+from sklearn.model_selection import train_test_split
 
 from src.data_utils import load_model, load_config
+from split_data import split_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +26,7 @@ CORS(app)  # Enable CORS
 # Load the trained model and ModelMonitor
 model_path = os.getenv('MODEL_PATH', r'models/best_model.pkl')
 monitor_path = os.getenv('MONITOR_PATH', r'models/model_monitor.pkl')
-config_path = os.getenv("CONFIG_PATH", r'config.yaml')
+config_path = os.getenv("CONFIG_PATH", r'train_model.yaml')
 logger.info(f"Loading the trained model from {model_path}")
 pipeline = load_model(model_path)
 logger.info(f"Loading the ModelMonitor from {monitor_path}")
@@ -66,12 +73,6 @@ def predict():
     # Map prediction to "Failed" or "Not Failed"
     prediction_label = "Failed" if prediction[0] == 1 else "Not Failed"
 
-    # Monitor model performance
-    # metrics, drift_status = monitor.monitor(X_new=features, y_true=prediction)
-    # logger.info(f"Prediction metrics: {metrics}")
-    # logger.info(f"Drift detected: {drift_status}")
-
-    # JSON doesn't recognize numpy types, so we need to convert the prediction to a Python type
     return jsonify({'prediction': prediction_label})
 
 
@@ -96,48 +97,123 @@ def get_data():
     return jsonify(data)
 
 
-# @app.route('/pca-decision-boundary', methods=['POST'])
-# def pca_decision_boundary():
-#     data = request.get_json(force=True)
-#     features = DataFrame(data['data'])
+@app.route('/train', methods=['POST'])
+def train_model():
+    """
+    Train the model by calling the train_model.py script.
 
-#     # Ensure the input data has the correct number of features
-#     for feature in feature_names:
-#         if feature not in features.columns:
-#             features[feature] = 0
+    Returns:
+    JSON response with the result of the training process.
+    """
+    train_val_file_path = os.path.join(
+        os.path.dirname(__file__), 'data', 'train_val_data.csv')
+    test_file_path = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_data.csv')
 
-#     # Extract the preprocessor from the pipeline
-#     preprocessor = pipeline.named_steps['preprocessor']
+    # Check if the train and test data files exist
+    if not os.path.exists(train_val_file_path) or not os.path.exists(test_file_path):
+        logger.info(
+            "Train or test data file not found. Running split_data function to generate them.")
+        try:
+            split_data(
+                data_file_path=os.path.join(os.path.dirname(
+                    __file__), 'data', 'predictive_maintenance.csv'),
+                train_val_file_path=train_val_file_path,
+                test_file_path=test_file_path
+            )
+        except Exception as e:
+            logger.error(
+                f"An error occurred while splitting the data: {str(e)}")
+            return jsonify({'error': 'An error occurred while splitting the data', 'details': str(e)}), 500
 
-#     # Transform the data using the preprocessor
-#     transformed_features = preprocessor.transform(features)
+    # Proceed with training the model
+    try:
+        logger.info("Starting model training")
+        result = subprocess.run(
+            ['python', 'train_model.py'], capture_output=True, text=True)
+        if result.returncode == 0:
+            logger.info("Model training completed successfully")
+            return jsonify({'message': 'Model training completed successfully'}), 200
+        else:
+            logger.error(f"Model training failed: {result.stderr}")
+            return jsonify({'error': 'Model training failed', 'details': result.stderr}), 500
+    except Exception as e:
+        logger.error(f"An error occurred while training the model: {str(e)}")
+        return jsonify({'error': 'An error occurred while training the model', 'details': str(e)}), 500
 
-#     # Perform PCA on the transformed data
-#     pca = PCA(n_components=2)
-#     pca_result = pca.fit_transform(transformed_features)
 
-#     # Generate a mesh grid based on the min and max values from the training data
-#     x_min, x_max = float(min_max_values['min'][feature_names[0]]), float(
-#         min_max_values['max'][feature_names[0]])
-#     y_min, y_max = float(min_max_values['min'][feature_names[1]]), float(
-#         min_max_values['max'][feature_names[1]])
-#     xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-#                          np.arange(y_min, y_max, 0.1))
+@app.route('/confusion-matrix', methods=['POST'])
+def get_confusion_matrix():
+    """
+    Get the confusion matrix for the model using test data from test_data.csv.
 
-#     # Evaluate the model's decision function on the grid
-#     grid_points = np.c_[xx.ravel(), yy.ravel()]
-#     grid_probabilities = pipeline.predict_proba(
-#         pca.inverse_transform(grid_points))[:, 1]
-#     zz = grid_probabilities.reshape(xx.shape)
+    Returns:
+    JSON response with the confusion matrix.
+    """
+    test_file_path = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_data.csv')
+    if not os.path.exists(test_file_path):
+        logger.error(f"Test data file not found at {test_file_path}")
+        return jsonify({'error': 'Test data file not found'}), 404
 
-#     return jsonify({
-#         'pca_data': pca_result.tolist(),
-#         'decision_boundary': {
-#             'x': xx.tolist(),
-#             'y': yy.tolist(),
-#             'z': zz.tolist()
-#         }
-#     })
+    logger.info(f"Loading test data from {test_file_path}")
+    df = pd.read_csv(test_file_path)
+    # Assuming 'Target' is the label column
+    features = df.drop('Target', axis=1)
+    labels = df['Target']
+
+    logger.info("Calculating confusion matrix")
+    predictions = pipeline.predict(features)
+    cm = confusion_matrix(labels, predictions)
+    return jsonify({'confusion_matrix': cm.tolist()})
+
+
+@app.route('/roc-curve', methods=['POST'])
+def get_roc_curve():
+    """
+    Generate the ROC curve data for the model using test data from test_data.csv.
+
+    Returns:
+    JSON response with the false positive rate, true positive rate, and AUC.
+    """
+    test_file_path = os.path.join(
+        os.path.dirname(__file__), 'data', 'test_data.csv')
+    if not os.path.exists(test_file_path):
+        logger.error(f"Test data file not found at {test_file_path}")
+        return jsonify({'error': 'Test data file not found'}), 404
+
+    logger.info(f"Loading test data from {test_file_path}")
+    df = pd.read_csv(test_file_path)
+    # Assuming 'Target' is the label column
+    features = df.drop('Target', axis=1)
+    labels = df['Target']
+
+    logger.info("Generating ROC curve data")
+    probabilities = pipeline.predict_proba(features)[:, 1]
+    fpr, tpr, _ = roc_curve(labels, probabilities)
+    roc_auc = auc(fpr, tpr)
+
+    return jsonify({'fpr': fpr.tolist(), 'tpr': tpr.tolist(), 'roc_auc': roc_auc})
+
+
+@app.route('/feature-importance', methods=['GET'])
+def get_feature_importance():
+    """
+    Get the feature importance of the model.
+
+    Returns:
+    JSON response with the feature importance.
+    """
+    logger.info("Getting feature importance")
+    try:
+        # Assuming the model has a feature_importances_ attribute
+        feature_importances = pipeline.named_steps['model'].feature_importances_
+        feature_importance_dict = dict(zip(feature_names, feature_importances))
+        return jsonify({'feature_importance': feature_importance_dict})
+    except AttributeError as e:
+        logger.error(
+            f"Model does not have feature_importances_ attribute: {str(e)}")
+        return jsonify({'error': 'Model does not have feature_importances_ attribute', 'details': str(e)}), 500
 
 
 if __name__ == '__main__':
