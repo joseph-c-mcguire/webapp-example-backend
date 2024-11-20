@@ -9,6 +9,7 @@ from src.data_utils import (
     interpret_model,
     monitor_model_performance,
     get_top_n_indices,
+    get_model,
 )
 import sys
 import unittest
@@ -20,6 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import numpy as np
+import importlib
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -118,6 +120,12 @@ class PredictiveMaintenanceTests(unittest.TestCase):
         arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
         top_indices = get_top_n_indices(arr, 3)
         self.assertEqual(list(top_indices), [4, 8, 3])
+
+    def test_get_model(self):
+        model = get_model(
+            "sklearn.ensemble.RandomForestClassifier", {"n_estimators": 10}
+        )
+        self.assertIsInstance(model, RandomForestClassifier)
 
 
 if __name__ == "__main__":

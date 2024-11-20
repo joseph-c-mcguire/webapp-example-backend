@@ -399,10 +399,11 @@ def load_model(file_path: str) -> BaseEstimator:
     return model
 
 
-def get_model(
-    model_name: str, import_module: str = sklearn, model_params: dict = {}
-) -> sklearn.base.BaseEstimator:
-    """Returns a scikit-learn model."""
-    model_class = getattr(importlib.import_module(import_module), model_name)
-    model = model_class(**model_params)  # Instantiates the model
-    return model
+def get_model(model_name, model_params):
+    try:
+        module_name, class_name = model_name.rsplit(".", 1)
+        model_class = getattr(importlib.import_module(module_name), class_name)
+        return model_class(**model_params)
+    except (AttributeError, ValueError, ImportError) as e:
+        logger.error(f"Error loading model {model_name}: {e}")
+        raise
