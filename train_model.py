@@ -104,7 +104,7 @@ def train_model(config_path: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Predictive Maintenance Model Training")
-    parser.add_argument('--config', default="config.yaml", type=str,
+    parser.add_argument('--config', default="train_model.yaml", type=str,
                         help='Path to the configuration file')
     args = parser.parse_args()
     train_model(args.config)
