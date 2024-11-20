@@ -136,6 +136,7 @@ def train_model():
             return jsonify({'message': 'Model training completed successfully'}), 200
         else:
             logger.error(f"Model training failed: {result.stderr}")
+            logger.error(f"Model training stdout: {result.stdout}")
             return jsonify({'error': 'Model training failed', 'details': result.stderr}), 500
     except Exception as e:
         logger.error(f"An error occurred while training the model: {str(e)}")
@@ -214,6 +215,18 @@ def get_feature_importance():
         logger.error(
             f"Model does not have feature_importances_ attribute: {str(e)}")
         return jsonify({'error': 'Model does not have feature_importances_ attribute', 'details': str(e)}), 500
+
+
+@app.route('/feature-names', methods=['GET'])
+def get_feature_names():
+    """
+    Get the feature names used during training.
+
+    Returns:
+    JSON response with the feature names.
+    """
+    logger.info("Getting feature names")
+    return jsonify({'feature_names': feature_names})
 
 
 if __name__ == '__main__':
