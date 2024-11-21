@@ -263,8 +263,7 @@ def get_confusion_matrix():
 
     Request JSON format:
     {
-        "model_name": "LogisticRegression",
-        "class_label": "class_name"
+        "model_name": "LogisticRegression"
     }
 
     Returns:
@@ -274,9 +273,7 @@ def get_confusion_matrix():
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     model_name = data.get("model_name", "Logistic Regression")
-    class_label = data.get("class_label", "No Failure")
     logger.info(f"Model name: {model_name}")
-    logger.info(f"Class label: {class_label}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -288,15 +285,13 @@ def get_confusion_matrix():
 
     logger.info(f"Loading test data from {test_file_path}")
     df = pd.read_csv(test_file_path)
-    ## Filter the data to only include the specified class label
-    df = df[df[config["target_column"]] == class_label]
     try:
         features = df.drop(config["target_column"], axis=1)
         labels = df[config["target_column"]]
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
-        cm = confusion_matrix(labels, predictions, labels=[class_label])
+        cm = confusion_matrix(labels, predictions)
         logger.debug(f"Confusion matrix: {cm}")
         return jsonify({"confusion_matrix": cm.tolist()})
     except Exception as e:

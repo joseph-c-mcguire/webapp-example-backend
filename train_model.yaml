@@ -6,9 +6,6 @@ columns_to_scale: ['Air temperature [K]', 'Process temperature [K]', 'Rotational
 columns_to_encode: ['Type']
 target_column: 'Failure Type'
 param_grids: {
-    'Logistic Regression': {
-        'C': [0.1, 1, 10]
-    },
     'Decision Tree': {
         'max_depth': [null, 10, 20, 30]
     },
@@ -26,11 +23,6 @@ param_grids: {
     }
 }
 models: {
-    'Logistic Regression': {
-        import_module: 'sklearn.linear_model',
-        model_name: 'LogisticRegression',
-        model_params: {'max_iter': 1000}
-    },
     'Decision Tree': {
         import_module: 'sklearn.tree',
         model_name: 'DecisionTreeClassifier',
