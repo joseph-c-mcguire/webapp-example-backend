@@ -2,7 +2,12 @@
 
 ## Installation
 
-To install the back-end, clone the repository and install the dependencies.
+To install the back-end, clone the repository and install the dependencies:
+```sh
+git clone https://github.com/your-repo/predictive-maintenance-backend.git
+cd predictive-maintenance-backend
+pip install .
+```
 
 ## Running Unit Tests
 
@@ -37,6 +42,9 @@ export CONFIG_PATH=path/to/your/config.yaml
 ```
 
 3. Start the Flask API:
+```sh
+python serve_model.py
+```
 The API will be available at http://0.0.0.0:5000.
 
 ## Running the API via Docker
