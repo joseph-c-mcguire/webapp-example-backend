@@ -62,7 +62,7 @@ class TestAPI(unittest.TestCase):
 
     def test_get_confusion_matrix(self):
         # Define the required JSON payload
-        payload = {"model_name": "Logistic Regression", "class_label": "No Failure"}
+        payload = {"model_name": "Decision Tree", "class_label": "No Failure"}
 
         # Send the POST request with the JSON payload
         response = self.app.post(
@@ -82,7 +82,7 @@ class TestAPI(unittest.TestCase):
 
     def test_get_roc_curve(self):
         # Define the required JSON payload for ROC curve
-        payload = {"model_name": "Logistic Regression", "class_label": "No Failure"}
+        payload = {"model_name": "Decision Tree", "class_label": "No Failure"}
 
         # Send the POST request with the JSON payload
         response = self.app.post(

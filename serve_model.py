@@ -76,7 +76,7 @@ def predict():
 
     Request JSON format:
     {
-        "model_name": "LogisticRegression",
+        "model_name": "DecisionTree",
         "features": {
             "Type": "M",
             "Air temperature [K]": 300,
@@ -94,7 +94,7 @@ def predict():
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     logger.info(f"Received data: {data}")
-    model_name = data.get("model_name", "Logistic Regression")
+    model_name = data.get("model_name", "Decision Tree")
     logger.info(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
@@ -123,7 +123,7 @@ def predict_probabilities():
 
     Request JSON format:
     {
-        "model_name": "LogisticRegression",
+        "model_name": "DecisionTree",
         "data": [
             {
                 "Type": "M",
@@ -142,7 +142,7 @@ def predict_probabilities():
     if not pipeline:
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
-    model_name = data.get("model_name", "Logistic Regression")
+    model_name = data.get("model_name", "Decision Tree")
     logger.debug(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
@@ -265,7 +265,7 @@ def get_confusion_matrix():
 
     Request JSON format:
     {
-        "model_name": "LogisticRegression"
+        "model_name": "DecisionTree"
     }
 
     Returns:
@@ -274,7 +274,7 @@ def get_confusion_matrix():
     if not pipeline:
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
-    model_name = data.get("model_name", "Logistic Regression")
+    model_name = data.get("model_name", "Decision Tree")
     logger.info(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
@@ -309,7 +309,7 @@ def get_roc_curve():
 
     Request JSON format:
     {
-        "model_name": "LogisticRegression",
+        "model_name": "Decision Tree",
         "class_label": "class_name"
     }
 
@@ -320,7 +320,7 @@ def get_roc_curve():
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     logger.info(f"Received data for ROC curve: {data}")
-    model_name = data.get("model_name", "Logistic Regression")
+    model_name = data.get("model_name", "Decision Tree")
     class_label = data.get("class_label", "No Failure")
 
     if not model_name or not class_label:
@@ -536,18 +536,14 @@ def retrain_model():
         "columns_to_encode": ["Type"],
         "target_column": "Failure Type",
         "param_grids": {
-            "Logistic Regression": {"C": [0.1, 1, 10]},
             "Decision Tree": {"max_depth": [null, 10, 20, 30]},
             "Random Forest": {"n_estimators": [100, 200], "max_depth": [10, 20]},
             "Gradient Boosting": {"n_estimators": [100, 200], "learning_rate": [0.01, 0.1]},
-            "SVM": {"C": [0.1, 1, 10], "kernel": ["linear", "rbf"]}
         },
         "models": {
-            "Logistic Regression": {"import_module": "sklearn.linear_model", "model_name": "LogisticRegression", "model_params": {"max_iter": 1000}},
             "Decision Tree": {"import_module": "sklearn.tree", "model_name": "DecisionTreeClassifier", "model_params": {"random_state": 42}},
             "Random Forest": {"import_module": "sklearn.ensemble", "model_name": "RandomForestClassifier", "model_params": {"random_state": 42}},
             "Gradient Boosting": {"import_module": "sklearn.ensemble", "model_name": "GradientBoostingClassifier", "model_params": {"random_state": 42}},
-            "SVM": {"import_module": "sklearn.svm", "model_name": "SVC", "model_params": {"probability": True}}
         },
         "train_test_split": {"test_size": 0.2, "random_state": 42}
     }
