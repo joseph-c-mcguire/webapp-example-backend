@@ -24,7 +24,9 @@ CORS(app)  # Enable CORS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Load the trained model and ModelMonitor
-model_path = os.getenv("MODEL_PATH", os.path.join(BASE_DIR, "models", "best_model.pkl"))
+model_path = os.getenv(
+    "MODEL_PATH", os.path.join(BASE_DIR, "models", "best_model_pipeline.pkl")
+)
 monitor_path = os.getenv(
     "MONITOR_PATH", os.path.join(BASE_DIR, "models", "model_monitor.pkl")
 )
@@ -599,6 +601,6 @@ def index():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 80))
+    port = int(os.environ.get("PORT", 5000))
     logger.info("Starting Flask app")
     app.run(host="0.0.0.0", port=port)
