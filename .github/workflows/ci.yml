@@ -20,19 +20,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
 
-    - name: Run unit tests with coverage
+    - name: Run unit tests
       run: |
-        pip install coverage
-        coverage run -m unittest discover -s . -p "test_*.py"
-        coverage xml
-
-    - name: Upload coverage to GitHub
-      uses: codecov/codecov-action@v2
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: true
+        python -m unittest discover -s . -p "test_*.py"
 
     - name: Ensure the train_model.yaml file is present
       run: test -f train_model.yaml
