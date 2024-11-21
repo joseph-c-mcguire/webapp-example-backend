@@ -150,6 +150,18 @@ def predict_probabilities():
         features = DataFrame(data["data"])
         features = preprocessor.transform(features)
         logger.debug(f"Transformed features: {features}")
+
+        if not hasattr(model, "predict_proba"):
+            logger.error(f"Model {model_name} does not support probability prediction")
+            return (
+                jsonify(
+                    {
+                        "error": f"Model {model_name} does not support probability prediction"
+                    }
+                ),
+                400,
+            )
+
         probabilities = model.predict_proba(features)  # Multi-class probabilities
         return jsonify({"probabilities": probabilities.tolist()})
     except ValueError as e:
