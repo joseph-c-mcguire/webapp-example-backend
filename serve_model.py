@@ -467,18 +467,19 @@ def get_training_progress():
 @app.route("/available-models", methods=["GET"])
 def get_available_models():
     """
-    Get the list of available models.
+    Get the list of available models from the train_model.yaml configuration.
 
     Returns:
     JSON response with the list of available models.
     """
-    models_dir = os.path.join(os.path.dirname(__file__), "models")
-    logger.debug(f"Models directory: {models_dir}")
-    if not os.path.exists(models_dir):
-        return jsonify({"error": "Models directory not found"}), 404
+    config_path = os.getenv("CONFIG_PATH", os.path.join(BASE_DIR, "train_model.yaml"))
+    logger.debug(f"Config path: {config_path}")
+    if not os.path.exists(config_path):
+        return jsonify({"error": "Configuration file not found"}), 404
 
-    models = [f.split(".pkl")[0] for f in os.listdir(models_dir) if f.endswith(".pkl")]
-    return jsonify({"available_models": models})
+    config = load_config(config_path)
+    available_models = list(config["models"].keys())
+    return jsonify({"available_models": available_models})
 
 
 @app.route("/class-names", methods=["GET"])
