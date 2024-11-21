@@ -292,8 +292,9 @@ def get_confusion_matrix():
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
         cm = confusion_matrix(labels, predictions)
+        label_names = list(model.classes_)
         logger.debug(f"Confusion matrix: {cm}")
-        return jsonify({"confusion_matrix": cm.tolist()})
+        return jsonify({"confusion_matrix": cm.tolist(), "labels": label_names})
     except Exception as e:
         logger.error(f"Error getting confusion matrix: {e}")
         return jsonify({"error": str(e)}), 400
@@ -388,7 +389,12 @@ def get_feature_importance():
         feature_importances = model.feature_importances_
         feature_importance_dict = dict(zip(feature_names, feature_importances))
         logger.debug(f"Feature importances: {feature_importance_dict}")
-        return jsonify({"feature_importance": feature_importance_dict})
+        return jsonify(
+            {
+                "feature_importance": feature_importance_dict,
+                "feature_names": feature_names,
+            }
+        )
     except AttributeError as e:
         logger.error(f"Model does not have feature_importances_ attribute: {str(e)}")
         return (
@@ -587,6 +593,12 @@ def retrain_model():
         )
 
 
+@app.route("/")
+def index():
+    return "Predictive Maintenance API is running"
+
+
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 80))
     logger.info("Starting Flask app")
-    app.run(host="0.0.0.0", port=os.environ.get("PORT", 80))
+    app.run(host="0.0.0.0", port=port)
