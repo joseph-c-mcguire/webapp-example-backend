@@ -93,6 +93,7 @@ def predict():
     data = request.get_json(force=True)
     logger.info(f"Received data: {data}")
     model_name = data.get("model_name", "Logistic Regression")
+    logger.info(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -102,6 +103,7 @@ def predict():
         logger.info(f"Predicting with model: {model_name}")
         logger.info(f"Predicting with data: {features}")
         features = preprocessor.transform(features)
+        logger.info(f"Transformed features: {features}")
         prediction = model.predict(features)
         return jsonify({"prediction": prediction[0]})
     except ValueError as e:
@@ -139,6 +141,7 @@ def predict_probabilities():
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     model_name = data.get("model_name", "Logistic Regression")
+    logger.debug(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -146,6 +149,7 @@ def predict_probabilities():
     try:
         features = DataFrame(data["data"])
         features = preprocessor.transform(features)
+        logger.debug(f"Transformed features: {features}")
         probabilities = model.predict_proba(features)  # Multi-class probabilities
         return jsonify({"probabilities": probabilities.tolist()})
     except ValueError as e:
@@ -161,6 +165,7 @@ def get_data():
     data_file_path = os.path.join(
         os.path.dirname(__file__), "data", "predictive_maintenance.csv"
     )
+    logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
         return jsonify({"error": "Data file not found"}), 404
@@ -181,6 +186,8 @@ def train_model():
         os.path.dirname(__file__), "data", "train_val_data.csv"
     )
     test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
+    logger.debug(f"Train/validation file path: {train_val_file_path}")
+    logger.debug(f"Test file path: {test_file_path}")
 
     # Check if the train and test data files exist
     if not os.path.exists(train_val_file_path) or not os.path.exists(test_file_path):
@@ -213,6 +220,7 @@ def train_model():
         result = subprocess.run(
             ["python", "train_model.py"], capture_output=True, text=True
         )
+        logger.debug(f"Training result: {result.stdout}")
         if result.returncode == 0:
             logger.info("Model training completed successfully")
             return jsonify({"message": "Model training completed successfully"}), 200
@@ -253,8 +261,10 @@ def get_confusion_matrix():
     if not pipeline:
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
-    model_name = data.get("model_name", "best_model")
-    class_label = data.get("class_label")
+    model_name = data.get("model_name", "Logistic Regression")
+    class_label = data.get("class_label", "No Failure")
+    logger.info(f"Model name: {model_name}")
+    logger.info(f"Class label: {class_label}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -270,10 +280,12 @@ def get_confusion_matrix():
     df = df[df[config["target_column"]] == class_label]
     try:
         features = df.drop(config["target_column"], axis=1)
+        labels = df[config["target_column"]]
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
         cm = confusion_matrix(labels, predictions, labels=[class_label])
+        logger.debug(f"Confusion matrix: {cm}")
         return jsonify({"confusion_matrix": cm.tolist()})
     except Exception as e:
         logger.error(f"Error getting confusion matrix: {e}")
@@ -297,8 +309,16 @@ def get_roc_curve():
     if not pipeline:
         return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
-    model_name = data.get("model_name", "Logitic Regression")
-    class_label = data.get("class_label")
+    logger.info(f"Received data for ROC curve: {data}")
+    model_name = data.get("model_name", "Logistic Regression")
+    class_label = data.get("class_label", "No Failure")
+
+    if not model_name or not class_label:
+        logger.error("Missing model_name or class_label in request data")
+        return jsonify({"error": "Missing model_name or class_label"}), 400
+
+    logger.debug(f"Model name: {model_name}")
+    logger.debug(f"Class label: {class_label}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -312,6 +332,9 @@ def get_roc_curve():
     df = pd.read_csv(test_file_path)
     try:
         features = df.drop(config["target_column"], axis=1)
+        labels = df[config["target_column"]]
+        logger.debug(f"Features shape: {features.shape}")
+        logger.debug(f"Labels shape: {labels.shape}")
         features = pipeline.named_steps["preprocessor"].transform(features)
         logger.info("Generating ROC curve data")
         probabilities = model.predict_proba(features)
@@ -320,7 +343,14 @@ def get_roc_curve():
             labels, probabilities[:, class_index], pos_label=class_label
         )
         roc_auc = auc(fpr, tpr)
+        logger.debug(f"ROC AUC: {roc_auc}")
         return jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc})
+    except KeyError as e:
+        logger.error(f"Class label {class_label} not found in model classes: {e}")
+        return (
+            jsonify({"error": f"Class label {class_label} not found in model classes"}),
+            400,
+        )
     except Exception as e:
         logger.error(f"Error getting ROC curve: {e}")
         return jsonify({"error": str(e)}), 400
@@ -340,6 +370,7 @@ def get_feature_importance():
     if not pipeline:
         return jsonify({"error": "Model not loaded"}), 500
     model_name = request.args.get("model_name", "Gradient Boosting")
+    logger.debug(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
         return jsonify({"error": error}), 404
@@ -349,6 +380,7 @@ def get_feature_importance():
         # Assuming the model has a feature_importances_ attribute
         feature_importances = model.feature_importances_
         feature_importance_dict = dict(zip(feature_names, feature_importances))
+        logger.debug(f"Feature importances: {feature_importance_dict}")
         return jsonify({"feature_importance": feature_importance_dict})
     except AttributeError as e:
         logger.error(f"Model does not have feature_importances_ attribute: {str(e)}")
@@ -375,6 +407,7 @@ def get_feature_names():
     JSON response with the feature names.
     """
     logger.info("Getting feature names")
+    logger.debug(f"Feature names: {feature_names}")
     return jsonify({"feature_names": feature_names})
 
 
@@ -392,6 +425,7 @@ def get_model_results():
     results_path = os.path.join(
         os.path.dirname(__file__), "models", "model_results.json"
     )
+    logger.debug(f"Results path: {results_path}")
     if not os.path.exists(results_path):
         logger.error(f"Model results file not found at {results_path}")
         return jsonify({"error": "Model results file not found"}), 404
@@ -402,6 +436,7 @@ def get_model_results():
 
     model_name = request.args.get("model_name")
     if model_name:
+        logger.debug(f"Model name: {model_name}")
         if model_name in model_results:
             return jsonify({model_name: model_results[model_name]})
         else:
@@ -419,6 +454,7 @@ def get_training_progress():
     JSON response with the training progress.
     """
     progress_path = os.path.join(os.path.dirname(__file__), "models", "progress.json")
+    logger.debug(f"Progress path: {progress_path}")
     if not os.path.exists(progress_path):
         return jsonify({"error": "Progress file not found"}), 404
 
@@ -437,6 +473,7 @@ def get_available_models():
     JSON response with the list of available models.
     """
     models_dir = os.path.join(os.path.dirname(__file__), "models")
+    logger.debug(f"Models directory: {models_dir}")
     if not os.path.exists(models_dir):
         return jsonify({"error": "Models directory not found"}), 404
 
@@ -455,6 +492,7 @@ def get_class_names():
     data_file_path = os.path.join(
         os.path.dirname(__file__), "data", "predictive_maintenance.csv"
     )
+    logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
         return jsonify({"error": "Data file not found"}), 404
@@ -503,6 +541,7 @@ def retrain_model():
     """
     config = request.get_json(force=True)
     config_path = os.path.join(BASE_DIR, "retrain_config.json")
+    logger.debug(f"Config path: {config_path}")
 
     # Save the configuration to a file
     with open(config_path, "w") as f:
@@ -516,6 +555,7 @@ def retrain_model():
             capture_output=True,
             text=True,
         )
+        logger.debug(f"Retraining result: {result.stdout}")
         if result.returncode == 0:
             logger.info("Model retraining completed successfully")
             return jsonify({"message": "Model retraining completed successfully"}), 200

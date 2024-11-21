@@ -21,17 +21,23 @@ def split_data(
     - test_size: float, proportion of the dataset to include in the test split
     - random_state: int, random seed for reproducibility
     """
-    logger.info(f"Splitting data from {data_file_path}")
+    logger.info(
+        f"Splitting data from {data_file_path} into train/validation and test sets"
+    )
+    logger.debug(f"Parameters - test_size: {test_size}, random_state: {random_state}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
         raise FileNotFoundError(f"Data file not found at {data_file_path}")
 
     df = pd.read_csv(data_file_path)
+    logger.debug(f"Data loaded successfully with shape: {df.shape}")
 
     # Split the data into training/validation and testing sets
     train_val_data, test_data = train_test_split(
         df, test_size=test_size, random_state=random_state
     )
+    logger.debug(f"Train/validation data shape: {train_val_data.shape}")
+    logger.debug(f"Test data shape: {test_data.shape}")
 
     # Save the split datasets to separate files
     train_val_data.to_csv(train_val_file_path, index=False)

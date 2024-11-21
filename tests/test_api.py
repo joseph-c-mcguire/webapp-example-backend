@@ -61,22 +61,40 @@ class TestAPI(unittest.TestCase):
         self.assertIsInstance(data, list)
 
     def test_get_confusion_matrix(self):
-        response = self.app.post("/confusion-matrix")
+        # Define the required JSON payload
+        payload = {"model_name": "Logistic Regression", "class_label": "No Failure"}
+
+        # Send the POST request with the JSON payload
+        response = self.app.post(
+            "/confusion-matrix",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
         self.assertEqual(
             response.status_code,
             200,
             msg=f"Response data: {response.get_data(as_text=True)}",
         )
+
         data = json.loads(response.get_data(as_text=True))
         self.assertIn("confusion_matrix", data)
 
     def test_get_roc_curve(self):
-        response = self.app.post("/roc-curve")
+        # Define the required JSON payload for ROC curve
+        payload = {"model_name": "Logistic Regression", "class_label": "No Failure"}
+
+        # Send the POST request with the JSON payload
+        response = self.app.post(
+            "/roc-curve", data=json.dumps(payload), content_type="application/json"
+        )
+
         self.assertEqual(
             response.status_code,
             200,
             msg=f"Response data: {response.get_data(as_text=True)}",
         )
+
         data = json.loads(response.get_data(as_text=True))
         self.assertIn("fpr", data)
         self.assertIn("tpr", data)
