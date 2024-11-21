@@ -17,10 +17,6 @@ param_grids: {
         'n_estimators': [100, 200],
         'learning_rate': [0.01, 0.1]
     },
-    'SVM': {
-        'C': [0.1, 1, 10],
-        'kernel': ['linear', 'rbf']
-    }
 }
 models: {
     'Decision Tree': {
@@ -38,11 +34,6 @@ models: {
         model_name: 'GradientBoostingClassifier',
         model_params: {'random_state': 42}
     },
-    'SVM': {
-        import_module: 'sklearn.svm',
-        model_name: 'SVC',
-        model_params: {'probability': True}
-    }
 }
 train_test_split: {
     "test_size": 0.2,
