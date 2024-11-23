@@ -20,9 +20,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
 
-    - name: Run unit tests
+    - name: Install pytest and coverage
+      run: pip install pytest pytest-cov
+
+    - name: Run unit tests with coverage
       run: |
-        python -m unittest discover -s . -p "test_*.py"
+        pytest --cov --cov-report=xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with: 
+        token: ${{secrets.CODECOV_TOKEN}}
 
     - name: Ensure the train_model.yaml file is present
       run: test -f train_model.yaml
