@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "webapp-example-backend"
 version = "0.1.0"
 description = "A web application backend example"
-requires-python = "=>3.11"
+requires-python = ">=3.11"
 authors = [
     { name = "Joseph McGuire", email = "joseph.c.mcg@gmail.com" }
 ]
