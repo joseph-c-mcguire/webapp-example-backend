@@ -4,6 +4,7 @@ import unittest
 import json
 from flask import Flask
 import random
+import requests  # Add requests to handle HTTP requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -15,6 +16,10 @@ class TestAPI(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
+        self.frontend_url = os.getenv(
+            "FRONTEND_URL",
+            "https://webapp-example-frontend-56f2ec31cf0a.herokuapp.com/",
+        )
 
     def generate_random_features(self):
         return {
@@ -109,6 +114,14 @@ class TestAPI(unittest.TestCase):
         )
         data = json.loads(response.get_data(as_text=True))
         self.assertIn("feature_importance", data)
+
+    def test_frontend_availability(self):
+        response = requests.get(self.frontend_url)
+        self.assertEqual(
+            response.status_code,
+            200,
+            msg=f"Frontend is not available. Status code: {response.status_code}",
+        )
 
 
 if __name__ == "__main__":

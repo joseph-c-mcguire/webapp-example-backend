@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webapp-example-backend"
+version = "0.1.0"
+description = "A web application backend example"
+requires-python = "==3.11.9"
+authors = [
+    { name = "Joseph McGuire", email = "joseph.c.mcg@gmail.com" }
+]
+license = { text = "BSD 3-Clause" }
+dependencies = [
+    "Flask",
+    "requests",
+    "unittest2",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "matplotlib",
+    "seaborn",
+    "setuptools",
+    "tdqm",
+    "shap",
+    "pyyaml",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+serve_model = "serve_model:main"
+train_model = "train_model:main"
