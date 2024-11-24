@@ -22,7 +22,7 @@ dependencies = [
     "matplotlib==3.9.2",
     "seaborn==0.13.2",
     "setuptools==65.5.0",
-    "tdqm==4.67.0",
+    "tqdm==4.67.0",
     "shap==0.46.0",
     "pyyaml==6.0.2",
     "flask_cors==5.0.0",
