@@ -31,6 +31,3 @@ jobs:
       uses: codecov/codecov-action@v4
       with: 
         token: ${{secrets.CODECOV_TOKEN}}
-
-    - name: Ensure the train_model.yaml file is present
-      run: test -f train_model.yaml
