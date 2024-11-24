@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pandas import DataFrame
@@ -10,7 +11,7 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 import json
 
 from src.data_utils import load_model, load_config
-from split_data import split_data
+from src.data_processing.split_data import split_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,36 +22,21 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS
 
 # Define the base directory
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = Path().resolve()
 
 # Load the trained model and ModelMonitor
-model_path = os.getenv(
-    "MODEL_PATH", os.path.join(BASE_DIR, "models", "best_model_pipeline.pkl")
-)
-monitor_path = os.getenv(
-    "MONITOR_PATH", os.path.join(BASE_DIR, "models", "model_monitor.pkl")
-)
-config_path = os.getenv("CONFIG_PATH", os.path.join(BASE_DIR, "train_model.yaml"))
-logger.info(f"Loading the trained model from {model_path}")
-pipeline = load_model(model_path)
-logger.info(f"Loading the ModelMonitor from {monitor_path}")
-monitor = joblib.load(monitor_path)
-logger.info(f"Loading the Configuration File from {config_path}")
-config = load_config(config_path)
+MODEL_PATH = Path(os.getenv("MODEL_PATH", BASE_DIR / "models"))
+DATA_PATH = BASE_DIR / "data"
+if not os.path.exists(MODEL_PATH):
+    logger.error(f"Model file not found at {MODEL_PATH}")
+    raise FileNotFoundError(f"Model file not found at {MODEL_PATH}")
 
-# Load the min and max values from the training data
-min_max_values_path = os.getenv(
-    "MIN_MAX_VALUES_PATH", os.path.join(BASE_DIR, "models", "min_max_values.pkl")
-)
-logger.info(f"Loading the min and max values from {min_max_values_path}")
-min_max_values = joblib.load(min_max_values_path)
-
+CONFIG_PATH = BASE_DIR / "src" / "model_training" / "train_model.yaml"
+CONFIG = load_config(CONFIG_PATH)
 # Load the preprocessor
-preprocessor_path = os.getenv(
-    "PREPROCESSOR_PATH", os.path.join(BASE_DIR, "models", "preprocessor.pkl")
-)
-logger.info(f"Loading the preprocessor from {preprocessor_path}")
-preprocessor = joblib.load(preprocessor_path)
+PREPROCESSER_PATH = MODEL_PATH / "preprocessor.pkl"
+logger.info(f"Loading the preprocessor from {PREPROCESSER_PATH}")
+preprocessor = joblib.load(PREPROCESSER_PATH)
 
 # Get the feature names used during training
 feature_names = []
@@ -60,7 +46,7 @@ for transformer in preprocessor.transformers:
 
 
 def load_specific_model(model_name):
-    model_path = os.path.join(BASE_DIR, "models", f"{model_name}.pkl")
+    model_path = MODEL_PATH / f"{model_name}.pkl"
     if not os.path.exists(model_path):
         logger.error(f"Model file not found at {model_path}")
         return None, f"Model '{model_name}' not found"
@@ -90,8 +76,6 @@ def predict():
     Returns:
     JSON response with prediction result.
     """
-    if not pipeline:
-        return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     logger.info(f"Received data: {data}")
     model_name = data.get("model_name", "Decision Tree")
@@ -139,8 +123,6 @@ def predict_probabilities():
     Returns:
     JSON response with prediction probabilities.
     """
-    if not pipeline:
-        return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     model_name = data.get("model_name", "Decision Tree")
     logger.debug(f"Model name: {model_name}")
@@ -176,9 +158,7 @@ def predict_probabilities():
 
 @app.route("/data", methods=["GET"])
 def get_data():
-    data_file_path = os.path.join(
-        os.path.dirname(__file__), "data", "predictive_maintenance.csv"
-    )
+    data_file_path = DATA_PATH / "predictive_maintenance.csv"
     logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
@@ -196,10 +176,8 @@ def train_model():
     Returns:
     JSON response with the result of the training process.
     """
-    train_val_file_path = os.path.join(
-        os.path.dirname(__file__), "data", "train_val_data.csv"
-    )
-    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
+    train_val_file_path = DATA_PATH / "train_val_data.csv"
+    test_file_path = DATA_PATH / "test_data.csv"
     logger.debug(f"Train/validation file path: {train_val_file_path}")
     logger.debug(f"Test file path: {test_file_path}")
 
@@ -210,9 +188,7 @@ def train_model():
         )
         try:
             split_data(
-                data_file_path=os.path.join(
-                    os.path.dirname(__file__), "data", "predictive_maintenance.csv"
-                ),
+                data_file_path=DATA_PATH / "predictive_maintenance.csv",
                 train_val_file_path=train_val_file_path,
                 test_file_path=test_file_path,
             )
@@ -271,8 +247,6 @@ def get_confusion_matrix():
     Returns:
     JSON response with the confusion matrix.
     """
-    if not pipeline:
-        return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     model_name = data.get("model_name", "Decision Tree")
     logger.info(f"Model name: {model_name}")
@@ -280,7 +254,7 @@ def get_confusion_matrix():
     if error:
         return jsonify({"error": error}), 404
 
-    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
+    test_file_path = DATA_PATH / "test_data.csv"
     if not os.path.exists(test_file_path):
         logger.error(f"Test data file not found at {test_file_path}")
         return jsonify({"error": "Test data file not found"}), 404
@@ -288,8 +262,8 @@ def get_confusion_matrix():
     logger.info(f"Loading test data from {test_file_path}")
     df = pd.read_csv(test_file_path)
     try:
-        features = df.drop(config["target_column"], axis=1)
-        labels = df[config["target_column"]]
+        features = df.drop(CONFIG["target_column"], axis=1)
+        labels = df[CONFIG["target_column"]]
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
@@ -316,8 +290,6 @@ def get_roc_curve():
     Returns:
     JSON response with the false positive rate, true positive rate, and AUC.
     """
-    if not pipeline:
-        return jsonify({"error": "Model not loaded"}), 500
     data = request.get_json(force=True)
     logger.info(f"Received data for ROC curve: {data}")
     model_name = data.get("model_name", "Decision Tree")
@@ -333,7 +305,7 @@ def get_roc_curve():
     if error:
         return jsonify({"error": error}), 404
 
-    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
+    test_file_path = DATA_PATH / "test_data.csv"
     if not os.path.exists(test_file_path):
         logger.error(f"Test data file not found at {test_file_path}")
         return jsonify({"error": "Test data file not found"}), 404
@@ -341,11 +313,11 @@ def get_roc_curve():
     logger.info(f"Loading test data from {test_file_path}")
     df = pd.read_csv(test_file_path)
     try:
-        features = df.drop(config["target_column"], axis=1)
-        labels = df[config["target_column"]]
+        features = df.drop(CONFIG["target_column"], axis=1)
+        labels = df[CONFIG["target_column"]]
         logger.debug(f"Features shape: {features.shape}")
         logger.debug(f"Labels shape: {labels.shape}")
-        features = pipeline.named_steps["preprocessor"].transform(features)
+        features = preprocessor.transform(features)
         logger.info("Generating ROC curve data")
         probabilities = model.predict_proba(features)
         class_index = list(model.classes_).index(class_label)
@@ -377,9 +349,7 @@ def get_feature_importance():
     Returns:
     JSON response with the feature importance.
     """
-    if not pipeline:
-        return jsonify({"error": "Model not loaded"}), 500
-    model_name = request.args.get("model_name", "Gradient Boosting")
+    model_name = request.args.get("model_name", "Decision Tree")
     logger.debug(f"Model name: {model_name}")
     model, error = load_specific_model(model_name)
     if error:
@@ -438,7 +408,7 @@ def get_model_results():
     JSON response with the results of each model or the specified model.
     """
     results_path = os.path.join(
-        os.path.dirname(__file__), "models", "model_results.json"
+        os.path.dirname(__file__), "..", "..", "..", "models", "model_results.json"
     )
     logger.debug(f"Results path: {results_path}")
     if not os.path.exists(results_path):
@@ -468,7 +438,7 @@ def get_training_progress():
     Returns:
     JSON response with the training progress.
     """
-    progress_path = os.path.join(os.path.dirname(__file__), "models", "progress.json")
+    progress_path = MODEL_PATH / "progress.json"
     logger.debug(f"Progress path: {progress_path}")
     if not os.path.exists(progress_path):
         return jsonify({"error": "Progress file not found"}), 404
@@ -487,11 +457,10 @@ def get_available_models():
     Returns:
     JSON response with the list of available models.
     """
-    config_path = os.getenv("CONFIG_PATH", os.path.join(BASE_DIR, "train_model.yaml"))
+    config_path = BASE_DIR / "src" / "model_training" / "train_model.yaml"
     logger.debug(f"Config path: {config_path}")
     if not os.path.exists(config_path):
         return jsonify({"error": "Configuration file not found"}), 404
-
     config = load_config(config_path)
     available_models = list(config["models"].keys())
     return jsonify({"available_models": available_models})
@@ -505,9 +474,7 @@ def get_class_names():
     Returns:
     JSON response with the list of class names.
     """
-    data_file_path = os.path.join(
-        os.path.dirname(__file__), "data", "predictive_maintenance.csv"
-    )
+    data_file_path = DATA_PATH / "data" / "predictive_maintenance.csv"
     logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
@@ -552,7 +519,7 @@ def retrain_model():
     JSON response with the result of the retraining process.
     """
     config = request.get_json(force=True)
-    config_path = os.path.join(BASE_DIR, "retrain_config.json")
+    config_path = os.path.join(BASE_DIR, "..", "..", "..", "retrain_config.json")
     logger.debug(f"Config path: {config_path}")
 
     # Save the configuration to a file

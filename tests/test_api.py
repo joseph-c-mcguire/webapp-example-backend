@@ -5,10 +5,36 @@ import json
 from flask import Flask
 import random
 import requests  # Add requests to handle HTTP requests
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from serve_model import app
+from src.api_serving.serve_model import app
+
+
+@pytest.fixture(scope="module")
+def test_client():
+    # Ensure the model file exists for testing
+    model_path = os.getenv(
+        "MODEL_PATH",
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "models",
+            "best_model_pipeline.pkl",
+        ),
+    )
+    if not os.path.exists(model_path):
+        pytest.fail(f"Model file not found at {model_path}")
+
+    testing_client = app.test_client()
+    ctx = app.app_context()
+    ctx.push()
+
+    yield testing_client
+
+    ctx.pop()
 
 
 class TestAPI(unittest.TestCase):

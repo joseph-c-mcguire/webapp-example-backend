@@ -11,21 +11,6 @@ authors = [
     { name = "Joseph McGuire", email = "joseph.c.mcg@gmail.com" }
 ]
 license = { text = "BSD 3-Clause" }
-dependencies = [
-    "Flask",
-    "requests",
-    "unittest2",
-    "numpy",
-    "pandas",
-    "scikit-learn",
-    "matplotlib",
-    "seaborn",
-    "setuptools",
-    "tdqm",
-    "shap",
-    "pyyaml",
-    "flask_cors"
-]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -34,5 +19,25 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [project.scripts]
-serve_model = "serve_model:main"
-train_model = "train_model:main"
+serve_model = "src.api_serving.serve_model:main"
+train_model = "src.model_training.train_model:main"
+
+[project.optional-dependencies]
+all = [
+    "Flask==3.1.0",
+    "requests==2.32.3",
+    "unittest2==1.1.0",
+    "numpy==2.0.2",
+    "pandas==2.2.3",
+    "scikit-learn==1.5.2",
+    "matplotlib==3.9.2",
+    "seaborn==0.13.2",
+    "setuptools==65.5.0",
+    "tdqm==4.67.0",
+    "shap==0.46.0",
+    "pyyaml==6.0.2",
+    "flask_cors==5.0.0"
+]
+
+[tool.pip-requirements]
+file = "requirements.txt"
