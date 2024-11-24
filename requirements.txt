@@ -1,4 +1,3 @@
-
 Flask
 requests
 unittest2
@@ -11,3 +10,4 @@ setuptools
 tdqm
 shap
 pyyaml
+flask_cors
