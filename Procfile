@@ -1,1 +1,1 @@
-web: python serve_model.py
+web: python src/api_serving/serve_model.py
