@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.api_serving.serve_model import app
+from app.api_serving.serve_model import app
 
 
 @pytest.fixture(scope="module")

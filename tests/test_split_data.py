@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import unittest
-from src.data_processing.split_data import split_data
+from app.data_processing.split_data import split_data
 import random
 
 

@@ -1,4 +1,4 @@
-from src.data_utils import (
+from app.utils.data_utils import (
     load_config,
     load_data,
     preprocess_data,
@@ -21,7 +21,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import numpy as np
-import importlib
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

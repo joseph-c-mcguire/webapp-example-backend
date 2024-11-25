@@ -27,12 +27,14 @@ BASE_DIR = Path().resolve()
 # Load the trained model and ModelMonitor
 MODEL_PATH = Path(os.getenv("MODEL_PATH", BASE_DIR / "models"))
 DATA_PATH = BASE_DIR / "data"
+
 if not os.path.exists(MODEL_PATH):
     logger.error(f"Model file not found at {MODEL_PATH}")
     raise FileNotFoundError(f"Model file not found at {MODEL_PATH}")
 
 CONFIG_PATH = BASE_DIR / "src" / "model_training" / "train_model.yaml"
 CONFIG = load_config(CONFIG_PATH)
+
 # Load the preprocessor
 PREPROCESSER_PATH = MODEL_PATH / "preprocessor.pkl"
 logger.info(f"Loading the preprocessor from {PREPROCESSER_PATH}")
@@ -227,8 +229,7 @@ def train_model():
             jsonify(
                 {
                     "error": "An error occurred while training the model",
-                    "details": str(e),
-                }
+                    "details": str(e)},
             ),
             500,
         )
@@ -510,60 +511,4 @@ def retrain_model():
         "models": {
             "Decision Tree": {"import_module": "sklearn.tree", "model_name": "DecisionTreeClassifier", "model_params": {"random_state": 42}},
             "Random Forest": {"import_module": "sklearn.ensemble", "model_name": "RandomForestClassifier", "model_params": {"random_state": 42}},
-            "Gradient Boosting": {"import_module": "sklearn.ensemble", "model_name": "GradientBoostingClassifier", "model_params": {"random_state": 42}},
-        },
-        "train_test_split": {"test_size": 0.2, "random_state": 42}
-    }
-
-    Returns:
-    JSON response with the result of the retraining process.
-    """
-    config = request.get_json(force=True)
-    config_path = os.path.join(BASE_DIR, "..", "..", "..", "retrain_config.json")
-    logger.debug(f"Config path: {config_path}")
-
-    # Save the configuration to a file
-    with open(config_path, "w") as f:
-        json.dump(config, f)
-
-    # Proceed with retraining the model
-    try:
-        logger.info("Starting model retraining")
-        result = subprocess.run(
-            ["python", "train_model.py", "--config", config_path],
-            capture_output=True,
-            text=True,
-        )
-        logger.debug(f"Retraining result: {result.stdout}")
-        if result.returncode == 0:
-            logger.info("Model retraining completed successfully")
-            return jsonify({"message": "Model retraining completed successfully"}), 200
-        else:
-            logger.error(f"Model retraining failed: {result.stderr}")
-            logger.error(f"Model retraining stdout: {result.stdout}")
-            return (
-                jsonify({"error": "Model retraining failed", "details": result.stderr}),
-                500,
-            )
-    except Exception as e:
-        logger.error(f"An error occurred while retraining the model: {str(e)}")
-        return (
-            jsonify(
-                {
-                    "error": "An error occurred while retraining the model",
-                    "details": str(e),
-                },
-            ),
-            500,
-        )
-
-
-@app.route("/")
-def index():
-    return "Predictive Maintenance API is running"
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 80))
-    logger.info("Starting Flask app")
-    app.run(host="0.0.0.0", port=port)
+            "Gradient Boosting": {"import_module": "sklearn.ensemble", "model_name": "GradientBoostingClassifier", "model_params": {"random

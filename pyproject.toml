@@ -65,5 +65,5 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [project.scripts]
-serve_model = "src.api_serving.serve_model:main"
-train_model = "src.model_training.train_model:main"
+serve_model = "app.api_serving.serve_model:main"
+train_model = "app.model_training.train_model:main"
