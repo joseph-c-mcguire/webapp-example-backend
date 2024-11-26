@@ -251,6 +251,6 @@ class TrainingService:
         # Save the best model of each class using ModelManager
         for model_name, best_model in best_models.items():
             logger.info(f"Saving best model of {model_name}")
-            self.model_manager.save_model(best_model, model_name)
+            self.model_manager.save_model(best_model, model_name + ".pkl")
 
         return {"status": "success"}

@@ -73,7 +73,7 @@ class ModelManager:
         file_path : str
             The file path where the model will be saved.
         """
-        save_path = self.model_path / model_name + ".pkl"
+        save_path = self.model_path / model_name
         logger.info(f"Saving model to {save_path}")
         joblib.dump(model, save_path)
         logger.info("Model saved successfully")

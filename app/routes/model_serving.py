@@ -52,16 +52,12 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
             model_name = "Decision Tree"
             features = [
                 {
-                    "UDI": 1,
-                    "Product ID": "M14860",
                     "Type": "M",
                     "Air temperature [K]": 298.1,
                     "Process temperature [K]": 308.6,
                     "Rotational speed [rpm]": 1551,
                     "Torque [Nm]": 42.8,
                     "Tool wear [min]": 0,
-                    "Target": 0,
-                    "Failure Type": "No Failure",
                 }
             ]
         else:
@@ -70,16 +66,12 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
                 "data",
                 [
                     {
-                        "UDI": 1,
-                        "Product ID": "M14860",
                         "Type": "M",
                         "Air temperature [K]": 298.1,
                         "Process temperature [K]": 308.6,
                         "Rotational speed [rpm]": 1551,
                         "Torque [Nm]": 42.8,
                         "Tool wear [min]": 0,
-                        "Target": 0,
-                        "Failure Type": "No Failure",
                     }
                 ],
             )  # Default features as list of dicts
@@ -99,7 +91,7 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
             logger.error(f"Prediction error: {prediction_result['error']}")
             return jsonify({"error": prediction_result["error"]}), 400
 
-        return jsonify({"probabilities": prediction_result["probabilities"]})
+        return jsonify({"probabilities": prediction_result["probabilities"]}), 200
     except Exception as e:
         logger.error(f"An error occurred during prediction: {e}")
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "Prediction failed due to internal error."}), 500

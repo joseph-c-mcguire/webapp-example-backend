@@ -24,8 +24,8 @@ def train_model():
     """
     config = Config()  # Singleton instance
     data_path = config.RAW_DATA_PATH
-    train_val_file_path = config.PROCESSED_DATA_PATH / "train_val_data.csv"
-    test_file_path = config.PROCESSED_DATA_PATH / "test_data.csv"
+    train_val_file_path = os.path.join(config.PROCESSED_DATA_PATH, "train_val_data.csv")
+    test_file_path = os.path.join(config.PROCESSED_DATA_PATH, "test_data.csv")
     logger.debug(f"Train/validation file path: {train_val_file_path}")
     logger.debug(f"Test file path: {test_file_path}")
 
@@ -55,7 +55,9 @@ def train_model():
     # Proceed with training the model using TrainingService
     try:
         logger.info("Starting model training")
-        training_service = TrainingService(config_path=str(data_path / "config.json"))
+        training_service = TrainingService(
+            config_path=os.path.join(data_path, "config.json")
+        )
         result = training_service.train_model()
         return jsonify({"message": "Model training completed successfully"}), 200
     except Exception as e:

@@ -91,7 +91,11 @@ class InferenceService:
         Dict[str, Any]
             Prediction probabilities or error message.
         """
-        return self._predict_probabilities(model_name, data)
+        try:
+            return self._predict_probabilities(model_name, data)
+        except Exception as e:
+            logger.error(f"An error occurred during prediction: {e}")
+            raise
 
     def _predict_probabilities(
         self, model_name: str, data: List[Dict[str, Any]]
@@ -134,9 +138,7 @@ class InferenceService:
                     "error": f"Model {model_name} does not support probability prediction"
                 }
 
-            probabilities = model.predict_proba(
-                features_transformed
-            )  # Multi-class probabilities
+            probabilities = model.predict_proba(features_transformed)
             return {"probabilities": probabilities.tolist()}
         except ValueError as e:
             logger.error(f"Error during prediction: {e}")
