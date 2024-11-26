@@ -62,8 +62,7 @@ class ModelManager:
             logger.error(f"Error loading model {model_name}: {e}")
             return None, str(e)
 
-    @staticmethod
-    def save_model(model, file_path):
+    def save_model(self, model, model_name):
         """
         Save a machine learning model to the specified file path.
 
@@ -74,6 +73,7 @@ class ModelManager:
         file_path : str
             The file path where the model will be saved.
         """
-        logger.info(f"Saving model to {file_path}")
-        joblib.dump(model, file_path)
+        save_path = self.model_path / model_name + ".pkl"
+        logger.info(f"Saving model to {save_path}")
+        joblib.dump(model, save_path)
         logger.info("Model saved successfully")
