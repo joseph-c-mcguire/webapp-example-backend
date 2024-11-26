@@ -1,4 +1,8 @@
-# app/routes/__init__.py
+"""Initialize and register route blueprints for the application.
+
+This module sets up the routing for model serving and training functionalities.
+
+"""
 
 from .model_serving import model_serving_bp
 from .model_training import model_training_bp

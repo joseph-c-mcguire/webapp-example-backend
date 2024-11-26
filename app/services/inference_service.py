@@ -13,17 +13,26 @@ class InferenceService:
     """
     Service for making predictions and predicting probabilities using specified models.
 
-    Attributes:
-        preprocessor (BaseEstimator): A preprocessor for transforming input features.
+    Attributes
+    ----------
+    preprocessor : BaseEstimator
+        A preprocessor for transforming input features.
+    config : Config
+        Configuration settings.
+    model_manager : ModelManager
+        Manages model loading and management.
     """
 
     def __init__(self, preprocessor: BaseEstimator, model_path: Path):
         """
         Initialize the InferenceService with the given preprocessor and model path.
 
-        Parameters:
-            preprocessor (BaseEstimator): A preprocessor for transforming input features.
-            model_path (Path): Path to the directory containing models.
+        Parameters
+        ----------
+        preprocessor : BaseEstimator
+            A preprocessor for transforming input features.
+        model_path : Path
+            Path to the directory containing models.
         """
         self.preprocessor = preprocessor
         self.config = Config()  # Singleton instance
@@ -33,12 +42,17 @@ class InferenceService:
         """
         Predict equipment failure type using the specified model.
 
-        Parameters:
-            model_name (str): Name of the model to use for prediction.
-            features (Dict[str, Any]): Input features for prediction.
+        Parameters
+        ----------
+        model_name : str
+            Name of the model to use for prediction.
+        features : Dict[str, Any]
+            Input features for prediction.
 
-        Returns:
-            Dict[str, Any]: Prediction result.
+        Returns
+        -------
+        Dict[str, Any]
+            Prediction result or error message.
         """
         model, error = self.model_manager.load_model(model_name)  # Updated method call
         if error:
@@ -65,12 +79,17 @@ class InferenceService:
         """
         Predict probabilities for equipment failure type using the specified model.
 
-        Parameters:
-            model_name (str): Name of the model to use for prediction.
-            data (List[Dict[str, Any]]): Input data for prediction.
+        Parameters
+        ----------
+        model_name : str
+            Name of the model to use for prediction.
+        data : List[Dict[str, Any]]
+            Input data for prediction.
 
-        Returns:
-            Dict[str, Any]: Prediction probabilities or error message.
+        Returns
+        -------
+        Dict[str, Any]
+            Prediction probabilities or error message.
         """
         return self._predict_probabilities(model_name, data)
 
@@ -79,6 +98,18 @@ class InferenceService:
     ) -> Dict[str, Any]:
         """
         Internal method to handle probability predictions.
+
+        Parameters
+        ----------
+        model_name : str
+            Name of the model to use for prediction.
+        data : List[Dict[str, Any]]
+            Input data for prediction.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Prediction probabilities or error message.
         """
         model, error = self.model_manager.load_model(model_name)  # Updated method call
         if error:

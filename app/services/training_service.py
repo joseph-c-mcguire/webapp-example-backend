@@ -22,20 +22,30 @@ logger = logging.getLogger(__name__)
 
 class TrainingService:
     """
-    A service class for training machine learning models based on a configuration file.
+    Service for training machine learning models based on a configuration file.
 
-    Attributes:
-        config_path (str): Path to the configuration file.
-        config (dict): Loaded and validated configuration.
-        model_manager (ModelManager): Instance of ModelManager for saving models.
+    Attributes
+    ----------
+    config_path : str
+        Path to the configuration file.
+    config : Config
+        Loaded configuration settings.
+    model_manager : ModelManager
+        Manages model saving and retrieval.
+    raw_data_path : Path
+        Path to the raw dataset.
+    processed_data_path : Path
+        Path where processed data is stored.
     """
 
     def __init__(self, config_path: str):
         """
-        Initialize the TrainingService with the given configuration path.
+        Initialize the TrainingService with configuration settings.
 
-        Parameters:
-            config_path (str): Path to the configuration file.
+        Parameters
+        ----------
+        config_path : str
+            Path to the configuration file.
         """
         self.config = Config(config_path)  # Pass config_path to Config
         self.model_manager = ModelManager(self.config.MODEL_PATH)
@@ -44,13 +54,17 @@ class TrainingService:
 
     def load_and_validate_config(self) -> Dict[str, Any]:
         """
-        Load and validate the configuration file.
+        Load and validate the training configuration.
 
-        Returns:
-            dict: Loaded configuration.
+        Returns
+        -------
+        Dict[str, Any]
+            The validated configuration dictionary.
 
-        Raises:
-            SystemExit: If the configuration is invalid or cannot be loaded.
+        Raises
+        ------
+        SystemExit
+            If the configuration fails to load or validate.
         """
         logger.info("Loading configuration")
         config = load_config(self.config_path)
@@ -62,13 +76,17 @@ class TrainingService:
     @staticmethod
     def convert_null_to_none(param_grid: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Convert "null" strings in the parameter grid to None.
+        Replace "null" strings with None in the parameter grid.
 
-        Parameters:
-            param_grid (dict): Parameter grid with potential "null" values.
+        Parameters
+        ----------
+        param_grid : Dict[str, Any]
+            Hyperparameter grid with possible "null" values.
 
-        Returns:
-            dict: Parameter grid with "null" values converted to None.
+        Returns
+        -------
+        Dict[str, Any]
+            Parameter grid with "null" values converted to None.
         """
         for key, values in param_grid.items():
             param_grid[key] = [None if v == "null" else v for v in values]
@@ -77,13 +95,17 @@ class TrainingService:
     @staticmethod
     def validate_config(config: Dict[str, Any]) -> bool:
         """
-        Validate the configuration file.
+        Validate the presence of required keys in the configuration.
 
-        Parameters:
-            config (dict): Configuration to validate.
+        Parameters
+        ----------
+        config : Dict[str, Any]
+            Configuration dictionary to validate.
 
-        Returns:
-            bool: True if the configuration is valid, False otherwise.
+        Returns
+        -------
+        bool
+            True if all required keys are present, False otherwise.
         """
         required_keys = [
             "data_path",
@@ -101,14 +123,19 @@ class TrainingService:
     @staticmethod
     def align_features(input_features: DataFrame, expected_features: list) -> DataFrame:
         """
-        Align the input features with the expected features by adding missing columns with default values.
+        Ensure input features match the expected feature set by adding missing columns.
 
-        Parameters:
-            input_features (pd.DataFrame): Input features.
-            expected_features (list): List of expected feature names.
+        Parameters
+        ----------
+        input_features : DataFrame
+            DataFrame containing input features.
+        expected_features : list
+            List of feature names expected by the model.
 
-        Returns:
-            pd.DataFrame: Aligned features.
+        Returns
+        -------
+        DataFrame
+            Aligned DataFrame with all expected features.
         """
         for feature in expected_features:
             if feature not in input_features.columns:
@@ -117,7 +144,12 @@ class TrainingService:
 
     def train_model(self) -> Dict[str, Any]:
         """
-        Train and evaluate models based on the configuration file.
+        Train and evaluate machine learning models based on the configuration.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Status dictionary indicating success or failure.
         """
         # Load raw data
         logger.info("Loading raw data")

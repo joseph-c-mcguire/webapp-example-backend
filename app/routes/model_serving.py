@@ -1,5 +1,11 @@
+"""
+Module for serving machine learning models via Flask routes.
+
+This module provides endpoints to perform predictions using pre-trained models.
+It initializes the ModelManager and InferenceService to handle model loading and inference.
+"""
+
 import logging
-from pathlib import Path
 from typing import Any, Dict, Tuple, Union
 
 import joblib

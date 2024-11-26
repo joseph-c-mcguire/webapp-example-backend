@@ -1,7 +1,7 @@
 import logging
 import os
 
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 
 from app.utils.data_preprocessing import split_data
 from app.services.training_service import TrainingService
@@ -16,8 +16,11 @@ def train_model():
     """
     Train the model by calling the train_model.py script.
 
-    Returns:
-    JSON response with the result of the training process.
+    Returns
+    -------
+    flask.Response
+        JSON response with the result of the training process.
+
     """
     config = Config()  # Singleton instance
     data_path = config.RAW_DATA_PATH

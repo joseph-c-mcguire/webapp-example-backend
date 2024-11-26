@@ -1,3 +1,17 @@
+"""
+Run Module
+
+This module initializes and runs the Flask application.
+
+Parameters
+----------
+None
+
+Returns
+-------
+None
+"""
+
 from app import create_app
 
 app = create_app()

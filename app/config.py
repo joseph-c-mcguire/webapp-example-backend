@@ -25,12 +25,41 @@ class Config:
         Path to the raw data directory.
     PROCESSED_DATA_PATH : Path
         Path to the processed data directory.
+    PREPROCESSOR_PATH : Path
+        Path to the preprocessor pickle file.
     DEBUG : bool
         Flag to enable/disable debug mode.
     TESTING : bool
         Flag to enable/disable testing mode.
     PORT : int
         Port number for the application.
+    MODEL_PARAMETERS : Dict[str, Any]
+        Model configuration parameters.
+    PARAM_GRIDS : Dict[str, Any]
+        Parameter grids for models.
+    COLUMNS_TO_DROP : List[str]
+        Columns to drop from the dataset.
+    COLUMNS_TO_SCALE : List[str]
+        Columns to scale in the dataset.
+    COLUMNS_TO_ENCODE : List[str]
+        Columns to encode in the dataset.
+    TARGET_COLUMN : str
+        Name of the target column.
+    TRAIN_TEST_SPLIT : Dict[str, Any]
+        Parameters for train-test split.
+    MODEL_DIRECTORY : Path
+        Directory to save models.
+
+    Methods
+    -------
+    __new__(cls, config_path: str = None)
+        Creates a new instance of the Config class.
+    setup_logging(self)
+        Set up centralized logging configuration.
+    load_training_model_config(self) -> Dict[str, Any]
+        Load model-specific configurations from training_model.yaml.
+    get_config_class() -> Type['Config']
+        Determine the configuration class based on the environment.
     """
 
     BASE_DIR: Path = Path(__file__).resolve().parent
@@ -55,6 +84,19 @@ class Config:
     _instance = None
 
     def __new__(cls, config_path: str = None):
+        """
+        Create a new instance of Config.
+
+        Parameters
+        ----------
+        config_path : str, optional
+            Path to the configuration file, by default None
+
+        Returns
+        -------
+        Config
+            Instance of the Config class.
+        """
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance.config_path = config_path or cls._instance.TRAIN_MODEL_CONFIG
@@ -67,6 +109,8 @@ class Config:
     def setup_logging(self):
         """
         Set up centralized logging configuration.
+
+        Sets the logging level and format for the application.
         """
         logging_level = logging.INFO  # Can be set via config if needed
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -77,8 +121,17 @@ class Config:
         """
         Load model-specific configurations from training_model.yaml.
 
-        Returns:
-            dict: Model configuration parameters.
+        Returns
+        -------
+        Dict[str, Any]
+            Model configuration parameters.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the training model config file does not exist.
+        yaml.YAMLError
+            If there is an error parsing the YAML file.
         """
         training_model_config_path = self.TRAIN_MODEL_CONFIG
         if not training_model_config_path.exists():
@@ -127,9 +180,15 @@ class Config:
         )
     )  # Added MODEL_DIRECTORY
 
-    def get_config_class():
+    @staticmethod
+    def get_config_class() -> Type["Config"]:
         """
         Determine the configuration class based on the environment.
+
+        Returns
+        -------
+        Type[Config]
+            Appropriate configuration class based on the environment.
         """
         env = config("ENVIRONMENT", default="development")
         if env == "production":
@@ -143,6 +202,13 @@ class Config:
 class DevelopmentConfig(Config):
     """
     Development configuration class. Inherits from Config.
+
+    Attributes
+    ----------
+    DEBUG : bool
+        Flag to enable/disable debug mode. Default is True.
+    TESTING : bool
+        Flag to enable/disable testing mode. Default is True.
     """
 
     DEBUG: bool = True

@@ -4,26 +4,38 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
+from typing import List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
 
 def preprocess_data(
-    data, columns_to_drop=None, columns_to_scale=None, columns_to_encode=None
-):
+    data: pd.DataFrame,
+    columns_to_drop: Optional[List[str]] = None,
+    columns_to_scale: Optional[List[str]] = None,
+    columns_to_encode: Optional[List[str]] = None,
+) -> Tuple[ColumnTransformer, pd.DataFrame]:
     """
     Preprocess the dataset: handle missing values, outliers, and normalize the data.
 
-    Parameters:
-    data (pd.DataFrame): Raw dataset.
-    columns_to_drop (list[str], optional): List of columns to drop from the dataset. Defaults to None.
-    columns_to_scale (list[str], optional): List of columns to scale/normalize. Defaults to None.
-    columns_to_encode (list[str], optional): List of columns to encode (e.g., categorical columns). Defaults to None.
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Raw dataset.
+    columns_to_drop : list of str, optional
+        List of columns to drop from the dataset. Defaults to None.
+    columns_to_scale : list of str, optional
+        List of columns to scale/normalize. Defaults to None.
+    columns_to_encode : list of str, optional
+        List of columns to encode (e.g., categorical columns). Defaults to None.
 
-    Returns:
-    Tuple[ColumnTransformer, pd.DataFrame]: Preprocessor and preprocessed dataset.
+    Returns
+    -------
+    Tuple[ColumnTransformer, pd.DataFrame]
+        Preprocessor and preprocessed dataset.
 
-    Example:
+    Examples
+    --------
     >>> preprocessor, preprocessed_data = preprocess_data(data, columns_to_drop=["col1"], columns_to_scale=["col2"], columns_to_encode=["col3"])
     >>> print(preprocessed_data.head())
     """
@@ -50,17 +62,32 @@ def preprocess_data(
 
 
 def split_data(
-    data_file_path, train_val_file_path, test_file_path, test_size=0.2, random_state=42
-):
+    data_file_path: str,
+    train_val_file_path: str,
+    test_file_path: str,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> None:
     """
     Split the data into training/validation and testing sets and save them to separate files.
 
-    Parameters:
-    - data_file_path: str, path to the original data file
-    - train_val_file_path: str, path to save the training/validation data
-    - test_file_path: str, path to save the testing data
-    - test_size: float, proportion of the dataset to include in the test split
-    - random_state: int, random seed for reproducibility
+    Parameters
+    ----------
+    data_file_path : str
+        Path to the original data file.
+    train_val_file_path : str
+        Path to save the training/validation data.
+    test_file_path : str
+        Path to save the testing data.
+    test_size : float, optional
+        Proportion of the dataset to include in the test split. Defaults to 0.2.
+    random_state : int, optional
+        Random seed for reproducibility. Defaults to 42.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the data file is not found at the specified path.
     """
     logger.info(
         f"Splitting data from {data_file_path} into train/validation and test sets"

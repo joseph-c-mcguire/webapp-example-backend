@@ -1,21 +1,24 @@
 import os
-
 from flask import Flask
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.routes import register_routes
 from app.extensions import init_app as init_extensions
+from typing import Any
 
 
-def create_app():
+def create_app() -> Flask:
     """
     Create and configure the Flask application.
 
-    :return: The configured Flask application instance
+    Returns
+    -------
+    Flask
+        The configured Flask application instance.
     """
     app = Flask(__name__)
 
     # Load configuration based on environment
-    env = os.getenv("FLASK_ENV", "development")
+    env: str = os.getenv("FLASK_ENV", "development")
     if env == "development":
         app.config.from_object(DevelopmentConfig)
     elif env == "testing":
