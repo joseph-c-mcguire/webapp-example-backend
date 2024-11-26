@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import patch, MagicMock
 from app.services.training_service import TrainingService
 from pandas import DataFrame
-import os
 
 
 @pytest.fixture
