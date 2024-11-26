@@ -1,6 +1,6 @@
 from decouple import config
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Type
 import yaml
 import logging
 
