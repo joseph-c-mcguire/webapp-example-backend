@@ -1,108 +1,99 @@
-from flask import Blueprint, request, jsonify
-from pandas import DataFrame
 import logging
-from app.utils.model_utils import load_specific_model
+from pathlib import Path
+from typing import Any, Dict, Tuple, Union
 
-bp = Blueprint("model_serving", __name__)
+import joblib
+from flask import Blueprint, jsonify, request
+
+from app.config import Config  # Ensure Config is imported
+from app.models.model_manager import ModelManager
+from app.services.inference_service import InferenceService  # Ensure proper import
+
+model_serving_bp = Blueprint("model_serving", __name__)
 logger = logging.getLogger(__name__)
 
+config = Config()  # Singleton instance
+model_manager = ModelManager(config.MODEL_PATH)
 
-@bp.route("/predict", methods=["POST"])
-def predict():
+# Initialize InferenceService
+preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"  # Updated path
+preprocessor = joblib.load(preprocessor_path)
+inference_service = InferenceService(
+    preprocessor=preprocessor, model_path=config.MODEL_PATH
+)  # Updated instantiation
+
+
+@model_serving_bp.route("/predict-probabilities", methods=["POST"])
+def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]:
     """
-    Predict equipment failure type using the specified model.
+    Predict probabilities for equipment failure types using the specified model.
 
-    Request JSON format:
-    {
-        "model_name": "DecisionTree",
-        "features": {
-            "Type": "M",
-            "Air temperature [K]": 300,
-            "Process temperature [K]": 310,
-            "Rotational speed [rpm]": 1500,
-            "Torque [Nm]": 40,
-            "Tool wear [min]": 10
-        }
-    }
+    Parameters
+    ----------
+    None
 
-    Returns:
-    JSON response with prediction result.
+    Returns
+    -------
+    Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
+        - On success: A dictionary containing prediction probabilities.
+        - On error: A dictionary with an error message and the corresponding HTTP status code.
     """
-    data = request.get_json(force=True)
-    logger.info(f"Received data: {data}")
-    model_name = data.get("model_name", "Decision Tree")
-    logger.info(f"Model name: {model_name}")
-    model, error = load_specific_model(model_name)
-    if error:
-        return jsonify({"error": error}), 404
-
     try:
-        features = DataFrame(data["features"], index=[0])
-        logger.info(f"Predicting with model: {model_name}")
-        logger.info(f"Predicting with data: {features}")
-        features = preprocessor.transform(features)
-        logger.info(f"Transformed features: {features}")
-        prediction = model.predict(features)
-        return jsonify({"prediction": prediction[0]})
-    except ValueError as e:
-        logger.error(f"Error during prediction: {e}")
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        logger.error(f"Error during prediction: {e}")
-        return jsonify({"error": str(e)}), 400
-
-
-@bp.route("/predict-probabilities", methods=["POST"])
-def predict_probabilities():
-    """
-    Predict probabilities for equipment failure type using the specified model.
-
-    Request JSON format:
-    {
-        "model_name": "DecisionTree",
-        "data": [
-            {
-                "Type": "M",
-                "Air temperature [K]": 300,
-                "Process temperature [K]": 310,
-                "Rotational speed [rpm]": 1500,
-                "Torque [Nm]": 40,
-                "Tool wear [min]": 10
-            }
-        ]
-    }
-
-    Returns:
-    JSON response with prediction probabilities.
-    """
-    data = request.get_json(force=True)
-    model_name = data.get("model_name", "Decision Tree")
-    logger.debug(f"Model name: {model_name}")
-    model, error = load_specific_model(model_name)
-    if error:
-        return jsonify({"error": error}), 404
-
-    try:
-        features = DataFrame(data["data"])
-        features = preprocessor.transform(features)
-        logger.debug(f"Transformed features: {features}")
-
-        if not hasattr(model, "predict_proba"):
-            logger.error(f"Model {model_name} does not support probability prediction")
-            return (
-                jsonify(
+        data = request.get_json(
+            force=False, silent=True
+        )  # Do not force, use silent parsing
+        if data is None:
+            model_name = "Decision Tree"
+            features = [
+                {
+                    "UDI": 1,
+                    "Product ID": "M14860",
+                    "Type": "M",
+                    "Air temperature [K]": 298.1,
+                    "Process temperature [K]": 308.6,
+                    "Rotational speed [rpm]": 1551,
+                    "Torque [Nm]": 42.8,
+                    "Tool wear [min]": 0,
+                    "Target": 0,
+                    "Failure Type": "No Failure",
+                }
+            ]
+        else:
+            model_name = data.get("model_name", "Decision Tree")
+            features = data.get(
+                "data",
+                [
                     {
-                        "error": f"Model {model_name} does not support probability prediction"
+                        "UDI": 1,
+                        "Product ID": "M14860",
+                        "Type": "M",
+                        "Air temperature [K]": 298.1,
+                        "Process temperature [K]": 308.6,
+                        "Rotational speed [rpm]": 1551,
+                        "Torque [Nm]": 42.8,
+                        "Tool wear [min]": 0,
+                        "Target": 0,
+                        "Failure Type": "No Failure",
                     }
-                ),
-                400,
-            )
+                ],
+            )  # Default features as list of dicts
+        logger.debug(f"Model name: {model_name}")
+        logger.debug(f"Input data: {features}")
 
-        probabilities = model.predict_proba(features)  # Multi-class probabilities
-        return jsonify({"probabilities": probabilities.tolist()})
-    except ValueError as e:
-        logger.error(f"Error during prediction: {e}")
-        return jsonify({"error": str(e)}), 400
+        # Use InferenceService for prediction
+        prediction_result = inference_service.predict_probabilities(
+            model_name, features
+        )
+
+        if prediction_result is None:
+            logger.error("InferenceService returned None")
+            return jsonify({"error": "Prediction failed due to internal error."}), 500
+
+        if "error" in prediction_result:
+            logger.error(f"Prediction error: {prediction_result['error']}")
+            return jsonify({"error": prediction_result["error"]}), 400
+
+        return jsonify({"probabilities": prediction_result["probabilities"]})
     except Exception as e:
-        logger.error(f"Error during prediction: {e}")
+        logger.error(f"An error occurred during prediction: {e}")
         return jsonify({"error": str(e)}), 400

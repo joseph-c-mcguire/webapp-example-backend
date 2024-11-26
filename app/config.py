@@ -1,25 +1,175 @@
-import os
-from dotenv import load_dotenv
+from decouple import config
+from pathlib import Path
+from typing import List, Dict, Any
+import yaml
+import logging
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 class Config:
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    MODEL_PATH = os.getenv("MODEL_PATH", os.path.join(BASE_DIR, "models"))
-    DATA_PATH = os.getenv("DATA_PATH", os.path.join(BASE_DIR, "data"))
-    DEBUG = False
-    TESTING = False
-    PORT = int(os.getenv("PORT", 80))
+    """
+    Base configuration class. Contains default configuration settings.
+
+    Attributes
+    ----------
+    BASE_DIR : Path
+        Absolute path to the directory containing this file.
+    MODEL_PATH : Path
+        Path to the directory containing models.
+    DATA_PATH : Path
+        Path to the directory containing data.
+    TRAIN_MODEL_CONFIG : Path
+        Path to the train_model.yaml configuration file.
+    RAW_DATA_PATH : Path
+        Path to the raw data directory.
+    PROCESSED_DATA_PATH : Path
+        Path to the processed data directory.
+    DEBUG : bool
+        Flag to enable/disable debug mode.
+    TESTING : bool
+        Flag to enable/disable testing mode.
+    PORT : int
+        Port number for the application.
+    """
+
+    BASE_DIR: Path = Path(__file__).resolve().parent
+    MODEL_PATH: Path = config("MODEL_PATH", default=BASE_DIR.parent / "models")
+    DATA_PATH: Path = config("DATA_PATH", default=BASE_DIR.parent / "data")
+    TRAIN_MODEL_CONFIG: Path = config(
+        "TRAIN_MODEL_CONFIG", default=BASE_DIR.parent / "train_model.yaml"
+    )
+    RAW_DATA_PATH: Path = config(
+        "RAW_DATA_PATH", default=DATA_PATH / "raw" / "predictive_maintenance.csv"
+    )
+    PROCESSED_DATA_PATH: Path = config(
+        "PROCESSED_DATA_PATH", default=DATA_PATH / "processed"
+    )
+    PREPROCESSOR_PATH: Path = config(
+        "PREPROCESSOR_PATH", default=MODEL_PATH / "preprocessor.pkl"
+    )
+    DEBUG: bool = config("DEBUG", default=False, cast=bool)
+    TESTING: bool = config("TESTING", default=False, cast=bool)
+    PORT: int = config("PORT", default=80, cast=int)
+
+    _instance = None
+
+    def __new__(cls, config_path: str = None):
+        if cls._instance is None:
+            cls._instance = super(Config, cls).__new__(cls)
+            cls._instance.config_path = config_path or cls._instance.TRAIN_MODEL_CONFIG
+            cls._instance.training_model_config = (
+                cls._instance.load_training_model_config()
+            )
+            cls._instance.setup_logging()
+        return cls._instance
+
+    def setup_logging(self):
+        """
+        Set up centralized logging configuration.
+        """
+        logging_level = logging.INFO  # Can be set via config if needed
+        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        logging.basicConfig(level=logging_level, format=log_format)
+        # Optionally, add file handlers or other handlers here
+
+    def load_training_model_config(self) -> Dict[str, Any]:
+        """
+        Load model-specific configurations from training_model.yaml.
+
+        Returns:
+            dict: Model configuration parameters.
+        """
+        training_model_config_path = self.TRAIN_MODEL_CONFIG
+        if not training_model_config_path.exists():
+            logger.error(
+                f"Training model config file not found at {training_model_config_path}"
+            )
+            raise FileNotFoundError(
+                f"Training model config file not found at {training_model_config_path}"
+            )
+        try:
+            with open(training_model_config_path, "r") as file:
+                config = yaml.safe_load(file)
+                logger.info("Loaded training_model.yaml successfully")
+                return config
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing training_model.yaml: {e}")
+            raise e
+
+    # Example of accessing model parameters
+    MODEL_PARAMETERS: Dict[str, Any] = property(
+        lambda self: self.training_model_config.get("models", {})
+    )
+    PARAM_GRIDS: Dict[str, Any] = property(
+        lambda self: self.training_model_config.get("param_grids", {})
+    )
+
+    # Add the following properties to access column configurations from training_model.yaml
+    COLUMNS_TO_DROP: List[str] = property(
+        lambda self: self.training_model_config.get("columns_to_drop", [])
+    )
+    COLUMNS_TO_SCALE: List[str] = property(
+        lambda self: self.training_model_config.get("columns_to_scale", [])
+    )
+    COLUMNS_TO_ENCODE: List[str] = property(
+        lambda self: self.training_model_config.get("columns_to_encode", [])
+    )
+    TARGET_COLUMN: str = property(
+        lambda self: self.training_model_config.get("target_column", "target")
+    )  # Added TARGET_COLUMN
+    TRAIN_TEST_SPLIT: Dict[str, Any] = property(
+        lambda self: self.training_model_config.get("train_test_split", {})
+    )  # Added TRAIN_TEST_SPLIT
+    MODEL_DIRECTORY: Path = property(
+        lambda self: Path(
+            self.training_model_config.get("model_directory", self.MODEL_PATH)
+        )
+    )  # Added MODEL_DIRECTORY
+
+    def get_config_class():
+        """
+        Determine the configuration class based on the environment.
+        """
+        env = config("ENVIRONMENT", default="development")
+        if env == "production":
+            return ProductionConfig
+        elif env == "testing":
+            return TestingConfig
+        else:
+            return DevelopmentConfig
 
 
 class DevelopmentConfig(Config):
-    DEBUG = True
+    """
+    Development configuration class. Inherits from Config.
+    """
+
+    DEBUG: bool = True
+    TESTING: bool = True
 
 
 class TestingConfig(Config):
-    TESTING = True
+    """
+    Testing configuration class. Inherits from Config.
+
+    Attributes
+    ----------
+    TESTING : bool
+        Flag to enable/disable testing mode. Default is True.
+    """
+
+    TESTING: bool = True
 
 
 class ProductionConfig(Config):
-    DEBUG = False
+    """
+    Production configuration class. Inherits from Config.
+
+    Attributes
+    ----------
+    DEBUG : bool
+        Flag to enable/disable debug mode. Default is False.
+    """
+
+    DEBUG: bool = False

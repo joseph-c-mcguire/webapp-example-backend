@@ -2,20 +2,12 @@ import logging
 import numpy as np
 import pandas as pd
 from typing import List, Tuple, Dict, Any
-import importlib
-import shap
-from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report, roc_auc_score
-from yaml import YAMLError, safe_load
-import joblib
-from pandas import to_pickle
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from yaml import safe_load, YAMLError
+
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -26,13 +18,18 @@ def load_config(file_path: str) -> Dict[str, Any]:
     """
     Load the configuration file from a YAML file.
 
-    Parameters:
-    file_path (str): Path to the YAML file.
+    Parameters
+    ----------
+    file_path : str
+        Path to the YAML file.
 
-    Returns:
-    dict: Loaded configuration.
+    Returns
+    -------
+    Dict[str, Any]
+        Loaded configuration.
 
-    Example:
+    Examples
+    --------
     >>> config = load_config("config.yaml")
     >>> print(config)
     """
@@ -55,13 +52,18 @@ def load_data(file_path: str) -> pd.DataFrame:
     """
     Load the dataset from a CSV file.
 
-    Parameters:
-    file_path (str): Path to the CSV file.
+    Parameters
+    ----------
+    file_path : str
+        Path to the CSV file.
 
-    Returns:
-    pd.DataFrame: Loaded dataset.
+    Returns
+    -------
+    pd.DataFrame
+        Loaded dataset.
 
-    Example:
+    Examples
+    --------
     >>> data = load_data("data/dataset.csv")
     >>> print(data.head())
     """
@@ -78,19 +80,32 @@ def preprocess_data(
     columns_to_encode: List[str] = None,
 ) -> Tuple[ColumnTransformer, np.ndarray]:
     """
-    Preprocess the dataset: handle missing values, outliers, and normalize the data.
+    Preprocess the dataset by handling missing values, outliers, and normalizing the data.
 
-    Parameters:
-    data (pd.DataFrame): Raw dataset.
-    columns_to_drop (list[str], optional): List of columns to drop from the dataset. Defaults to None.
-    columns_to_scale (list[str], optional): List of columns to scale/normalize. Defaults to None.
-    columns_to_encode (list[str], optional): List of columns to encode (e.g., categorical columns). Defaults to None.
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Raw dataset.
+    columns_to_drop : List[str], optional
+        List of columns to drop from the dataset, by default None.
+    columns_to_scale : List[str], optional
+        List of columns to scale/normalize, by default None.
+    columns_to_encode : List[str], optional
+        List of columns to encode (e.g., categorical columns), by default None.
 
-    Returns:
-    Tuple[ColumnTransformer, pd.DataFrame]: Preprocessor and preprocessed dataset.
+    Returns
+    -------
+    Tuple[ColumnTransformer, np.ndarray]
+        Preprocessor and preprocessed dataset.
 
-    Example:
-    >>> preprocessor, preprocessed_data = preprocess_data(data, columns_to_drop=["col1"], columns_to_scale=["col2"], columns_to_encode=["col3"])
+    Examples
+    --------
+    >>> preprocessor, preprocessed_data = preprocess_data(
+    >>>     data,
+    >>>     columns_to_drop=["col1"],
+    >>>     columns_to_scale=["col2"],
+    >>>     columns_to_encode=["col3"]
+    >>> )
     >>> print(preprocessed_data.head())
     """
     logger.info("Starting data preprocessing")
@@ -119,13 +134,17 @@ def perform_eda(data: pd.DataFrame) -> None:
     """
     Perform exploratory data analysis on the dataset.
 
-    Parameters:
-    data (pd.DataFrame): Preprocessed dataset.
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Preprocessed dataset.
 
-    Returns:
+    Returns
+    -------
     None
 
-    Example:
+    Examples
+    --------
     >>> perform_eda(data)
     """
     logger.info("Starting exploratory data analysis (EDA)")
@@ -138,266 +157,3 @@ def perform_eda(data: pd.DataFrame) -> None:
     sns.heatmap(data.corr(), annot=True, cmap="coolwarm")
     plt.show()
     logger.info("EDA completed")
-
-
-def select_features(
-    X: pd.DataFrame, y: pd.Series, preprocessor: ColumnTransformer
-) -> List[int]:
-    """
-    Select the most relevant features using a Random Forest model.
-
-    Parameters:
-    X (pd.DataFrame): Features.
-    y (pd.Series): Target variable.
-    preprocessor (ColumnTransformer): Preprocessor for the data.
-
-    Returns:
-    List[str]: Selected features.
-
-    Example:
-    >>> selected_features = select_features(X, y, preprocessor)
-    >>> print(selected_features)
-    """
-    logger.info("Starting feature selection")
-    processed_data = preprocessor.fit_transform(X)
-    model = RandomForestClassifier()
-    model.fit(processed_data, y)
-
-    # Get feature importances
-    selected_features = get_top_n_indices(model.feature_importances_)
-    logger.info("Feature selection completed")
-    return selected_features
-
-
-def train_and_evaluate_model(
-    X_train: np.ndarray,
-    y_train: np.ndarray,
-    X_test: np.ndarray,
-    y_test: np.ndarray,
-    models: Dict[str, BaseEstimator],
-) -> Dict[str, Dict[str, Any]]:
-    """
-    Train and evaluate multiple machine learning models.
-
-    Parameters:
-    X_train (np.ndarray): Training features.
-    y_train (np.ndarray): Training target.
-    X_test (np.ndarray): Testing features.
-    y_test (np.ndarray): Testing target.
-    models (dict): Dictionary of model names and their corresponding estimators.
-
-    Returns:
-    dict: Model evaluation results.
-
-    Example:
-    >>> models = {
-    >>>     'Logistic Regression': LogisticRegression(),
-    >>>     'Decision Tree': DecisionTreeClassifier(),
-    >>>     'Random Forest': RandomForestClassifier(),
-    >>>     'Gradient Boosting': GradientBoostingClassifier(),
-    >>>     'SVM': SVC(probability=True)
-    >>> }
-    >>> results = train_and_evaluate_model(X_train, y_train, X_test, y_test, models)
-    >>> for model_name, result in results.items():
-    >>>     print(f"Model: {model_name}")
-    >>>     print(result['Classification Report'])
-    >>>     print(f"ROC AUC: {result['ROC AUC']}\n")
-    """
-    logger.info("Starting model training and evaluation")
-    results = {}
-
-    for name, model in models.items():
-        logger.info(f"Training {name}")
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1]
-
-        results[name] = {
-            "Classification Report": classification_report(y_test, y_pred),
-            "ROC AUC": roc_auc_score(y_test, y_proba),
-        }
-        logger.info(f"Evaluation of {name} completed")
-
-    logger.info("Model training and evaluation completed")
-    return results
-
-
-def tune_model(
-    models: Dict[str, BaseEstimator],
-    param_grids: Dict[str, dict],
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-) -> BaseEstimator:
-    """
-    Perform hyperparameter tuning using GridSearchCV for multiple models.
-
-    Parameters:
-    models (dict): Dictionary of model names and their corresponding estimators.
-    param_grids (dict): Dictionary of model names and their corresponding hyperparameter grids.
-    X_train (pd.DataFrame): Training features.
-    y_train (pd.Series): Training target.
-
-    Returns:
-    BaseEstimator: Best estimator after hyperparameter tuning.
-
-    Example:
-    >>> models = {
-    >>>     'Random Forest': RandomForestClassifier(),
-    >>>     'Gradient Boosting': GradientBoostingClassifier()
-    >>> }
-    >>> param_grids = {
-    >>>     'Random Forest': {'n_estimators': [100, 200], 'max_depth': [10, 20]},
-    >>>     'Gradient Boosting': {'n_estimators': [100, 200], 'learning_rate': [0.01, 0.1]}
-    >>> }
-    >>> best_model = tune_model(models, param_grids, X_train, y_train)
-    """
-    logger.info("Starting hyperparameter tuning")
-    best_model = None
-    best_score = -np.inf
-
-    for name, model in models.items():
-        logger.info(f"Tuning {name}")
-        param_grid = param_grids.get(name, {})
-        grid_search = GridSearchCV(
-            estimator=model, param_grid=param_grid, cv=5, scoring="roc_auc", n_jobs=-1
-        )
-        grid_search.fit(X_train, y_train)
-
-        if grid_search.best_score_ > best_score:
-            best_score = grid_search.best_score_
-            best_model = grid_search.best_estimator_
-
-        logger.info(f"Best score for {name}: {grid_search.best_score_}")
-
-    logger.info("Hyperparameter tuning completed")
-    return best_model
-
-
-def interpret_model(model: BaseEstimator, X: pd.DataFrame) -> None:
-    """
-    Interpret the machine learning model using SHAP values.
-
-    Parameters:
-    model (BaseEstimator): Trained machine learning model.
-    X (pd.DataFrame): Features for interpretation.
-
-    Returns:
-    None
-
-    Example:
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> model = RandomForestClassifier().fit(X_train, y_train)
-    >>> interpret_model(model, X_test)
-    """
-    logger.info(f"Starting model interpretation for {model.__class__.__name__}")
-    explainer = shap.Explainer(model)
-    shap_values = explainer(X)
-
-    # Summary plot
-    shap.summary_plot(shap_values, X)
-    logger.info(f"Model interpretation for {model.__class__.__name__} completed")
-
-
-def monitor_model_performance(
-    model: BaseEstimator, X: pd.DataFrame, y: pd.Series
-) -> float:
-    """
-    Monitor the performance of the deployed model.
-
-    Parameters:
-    model (BaseEstimator): Trained machine learning model.
-    X (pd.DataFrame): Features.
-    y (pd.Series): Target variable.
-
-    Returns:
-    float: ROC AUC score of the model on new data.
-
-    Example:
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> model = RandomForestClassifier().fit(X_train, y_train)
-    >>> roc_auc = monitor_model_performance(model, X_test, y_test)
-    >>> print(roc_auc)
-    """
-    logger.info(f"Monitoring performance of {model.__class__.__name__}")
-    y_proba = model.predict_proba(X)[:, 1]
-    roc_auc = roc_auc_score(y, y_proba)
-    logger.info(f"Performance monitoring completed with ROC AUC: {roc_auc}")
-
-    return roc_auc
-
-
-def get_top_n_indices(arr: np.ndarray, n: int = 10) -> np.ndarray:
-    """
-    Get the indices of the n largest elements from a numpy array.
-
-    Parameters:
-    arr (np.ndarray): Input array.
-    n (int): Number of top elements to retrieve indices for. Defaults to 10.
-
-    Returns:
-    np.ndarray: Array of indices of the n largest elements.
-
-    Example:
-    >>> arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
-    >>> top_indices = get_top_n_indices(arr, 3)
-    >>> print(top_indices)
-    """
-    logger.info(f"Getting top {n} indices from array")
-    if n >= len(arr):
-        return np.argsort(arr)[-n:][::-1]
-
-    # Get the indices that would sort the array
-    sorted_indices = np.argsort(arr)
-    # Select the last n indices and reverse them
-    top_n_indices = sorted_indices[-n:][::-1]
-    logger.info(f"Top {n} indices obtained")
-
-    return top_n_indices
-
-
-def save_model(model: BaseEstimator, file_path: str) -> None:
-    """
-    Save the trained model to a file.
-
-    Parameters:
-    model (BaseEstimator): Trained machine learning model.
-    file_path (str): Path to save the model.
-
-    Returns:
-    None
-
-    Example:
-    >>> save_model(model, 'best_model.pkl')
-    """
-    logger.info(f"Saving model to {file_path}")
-    to_pickle(model, file_path)
-    logger.info("Model saved successfully")
-
-
-def load_model(file_path: str) -> BaseEstimator:
-    """
-    Load a trained model from a file.
-
-    Parameters:
-    file_path (str): Path to the model file.
-
-    Returns:
-    BaseEstimator: Loaded model.
-
-    Example:
-    >>> model = load_model('best_model.pkl')
-    """
-    logger.info(f"Loading model from {file_path}")
-    model = joblib.load(file_path)
-    logger.info("Model loaded successfully")
-    return model
-
-
-def get_model(model_name, model_params):
-    try:
-        module_name, class_name = model_name.rsplit(".", 1)
-        model_class = getattr(importlib.import_module(module_name), class_name)
-        return model_class(**model_params)
-    except (AttributeError, ValueError, ImportError) as e:
-        logger.error(f"Error loading model {model_name}: {e}")
-        raise

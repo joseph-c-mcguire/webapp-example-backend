@@ -1,15 +1,18 @@
 import os
 
 from flask import Flask
-from flask_cors import CORS
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.routes import register_routes
-from app.extensions import cors
+from app.extensions import init_app as init_extensions
 
 
 def create_app():
+    """
+    Create and configure the Flask application.
+
+    :return: The configured Flask application instance
+    """
     app = Flask(__name__)
-    CORS(app)  # Enable CORS
 
     # Load configuration based on environment
     env = os.getenv("FLASK_ENV", "development")
@@ -24,6 +27,6 @@ def create_app():
     register_routes(app)
 
     # Initialize extensions
-    cors.init_app(app)
+    init_extensions(app)
 
     return app

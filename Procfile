@@ -1,1 +1,1 @@
-web: python app/api_serving/serve_model.py
+web: python -m wsgi

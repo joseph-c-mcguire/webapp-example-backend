@@ -1,8 +1,10 @@
 import os
-import pandas as pd
 import unittest
-from app.data_processing.split_data import split_data
 import random
+
+import pandas as pd
+
+from app.utils.data_preprocessing import split_data
 
 
 class TestSplitData(unittest.TestCase):

@@ -97,24 +97,6 @@ class PredictiveMaintenanceTests(unittest.TestCase):
         best_model = tune_model(model, param_grid, X_train, y_train)
         self.assertIsInstance(best_model, RandomForestClassifier)
 
-    @patch("shap.Explainer")
-    @patch("shap.summary_plot")
-    def test_interpret_model(self, mock_summary_plot, mock_explainer):
-        X = pd.DataFrame(np.random.randn(20, 4), columns=["a", "b", "c", "d"])
-        model = RandomForestClassifier()
-        model.fit(X, np.random.randint(0, 2, size=20))
-        interpret_model(model, X)
-        self.assertTrue(mock_summary_plot.called)
-        self.assertTrue(mock_explainer.called)
-
-    def test_monitor_model_performance(self):
-        X = np.random.randn(50, 4)
-        y = np.random.randint(0, 2, size=50)
-        model = RandomForestClassifier()
-        model.fit(X, y)
-        auc_score = monitor_model_performance(model, X, y)
-        self.assertTrue(0 <= auc_score <= 1)
-
     def test_get_top_n_indices(self):
         arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
         top_indices = get_top_n_indices(arr, 3)
@@ -125,6 +107,44 @@ class PredictiveMaintenanceTests(unittest.TestCase):
             "sklearn.ensemble.RandomForestClassifier", {"n_estimators": 10}
         )
         self.assertIsInstance(model, RandomForestClassifier)
+
+        class PredictiveMaintenanceTests(unittest.TestCase):
+            # ...
+
+            def test_get_top_n_indices_basic(self):
+                arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+                top_indices = get_top_n_indices(arr, 3)
+                self.assertEqual(list(top_indices), [4, 8, 3])
+
+            def test_get_top_n_indices_all_elements(self):
+                arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+                top_indices = get_top_n_indices(arr, 10)
+                self.assertEqual(list(top_indices), [4, 8, 3, 7, 6, 2, 1, 5, 0, 9])
+
+            def test_get_top_n_indices_more_than_length(self):
+                arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+                top_indices = get_top_n_indices(arr, 15)
+                self.assertEqual(list(top_indices), [4, 8, 3, 7, 6, 2, 1, 5, 0, 9])
+
+            def test_get_top_n_indices_with_duplicates(self):
+                arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 9])
+                top_indices = get_top_n_indices(arr, 3)
+                self.assertEqual(list(top_indices), [9, 4, 8])
+
+            def test_get_top_n_indices_single_element(self):
+                arr = np.array([1])
+                top_indices = get_top_n_indices(arr, 1)
+                self.assertEqual(list(top_indices), [0])
+
+            def test_get_top_n_indices_empty_array(self):
+                arr = np.array([])
+                top_indices = get_top_n_indices(arr, 3)
+                self.assertEqual(list(top_indices), [])
+
+            def test_get_top_n_indices_n_is_zero(self):
+                arr = np.array([1, 3, 5, 7, 9, 2, 4, 6, 8, 0])
+                top_indices = get_top_n_indices(arr, 0)
+                self.assertEqual(list(top_indices), [])
 
 
 if __name__ == "__main__":
