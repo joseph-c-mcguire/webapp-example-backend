@@ -23,7 +23,9 @@ def client(app):
 
 
 @patch("app.services.model_diagnostics.pd.read_csv")
-@patch("app.services.model_diagnostics.os.path.exists")
+@patch(
+    "app.services.model_diagnostics.Path.exists"
+)  # Patch Path.exists instead of os.path.exists
 def test_get_confusion_matrix(mock_exists, mock_read_csv, client, app):
     mock_exists.return_value = True
     mock_read_csv.return_value = pd.DataFrame(
@@ -44,23 +46,33 @@ def test_get_confusion_matrix(mock_exists, mock_read_csv, client, app):
 
 
 @patch("app.services.model_diagnostics.pd.read_csv")
-@patch("app.services.model_diagnostics.os.path.exists")
+@patch(
+    "app.services.model_diagnostics.Path.exists"
+)  # Patch Path.exists instead of os.path.exists
 def test_get_roc_curve(mock_exists, mock_read_csv, client, app):
     mock_exists.return_value = True
     mock_read_csv.return_value = pd.DataFrame(
-        {"feature1": [1, 2, 3], "feature2": [4, 5, 6], "class_label": [0, 1, 0]}
+        {
+            "feature1": [1, 2, 3],
+            "feature2": [4, 5, 6],
+            "Failure Type": [
+                "No Failure",
+                "Failure",
+                "No Failure",
+            ],  # Use string labels
+        }
     )
 
     model = MagicMock()
     preprocessor = MagicMock()
-    model.predict_proba.return_value = np.array(
-        [[0.9, 0.1], [0.2, 0.8], [0.6, 0.4]]
-    )  # Modify to NumPy array
-    model.classes_ = [0, 1]
+    model.predict_proba.return_value = np.array([[0.9, 0.1], [0.2, 0.8], [0.6, 0.4]])
+    model.classes_ = ["No Failure", "Failure"]  # Use string classes
     preprocessor.transform.return_value = [[1, 4], [2, 5], [3, 6]]
 
     with app.app_context():
-        response, status_code = get_roc_curve(model, preprocessor, "model_name", 1)
+        response, status_code = get_roc_curve(
+            model, preprocessor, "Decision Tree", "No Failure"
+        )  # Pass class_label as string
         assert status_code == 200
         assert "fpr" in response.json
         assert "tpr" in response.json
