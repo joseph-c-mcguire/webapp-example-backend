@@ -32,4 +32,20 @@ def create_app() -> Flask:
     # Initialize extensions
     init_extensions(app)
 
+    # Register blueprints
+    from app.routes.model_training import model_training_bp
+    from app.routes.model_serving import model_serving_bp
+    from app.routes.model_diagnostics import model_diagnostics_bp
+    from app.routes.helper_service import helper_service_bp
+
+    app.register_blueprint(model_training_bp)
+    app.register_blueprint(model_serving_bp)
+    app.register_blueprint(model_diagnostics_bp)
+    app.register_blueprint(helper_service_bp)
+
+    # Add a route for '/'
+    @app.route("/")
+    def index():
+        return "Welcome to the Machine Learning API"
+
     return app
