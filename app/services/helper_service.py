@@ -124,25 +124,34 @@ def get_available_models():
 
 def get_class_names():
     """
-    Get the class names from the Failure Type column in the data.
+    Get the class names from the target column in the data.
 
     Returns
     -------
     flask.Response
         JSON response with the list of class names.
     """
-    data_file_path = os.path.join(
-        os.path.dirname(__file__), "data", "raw", "predictive_maintenance.csv"
-    )
-    logger.debug(f"Data file path: {data_file_path}")
-    if not os.path.exists(data_file_path):
-        logger.error(f"Data file not found at {data_file_path}")
-        return jsonify({"error": "Data file not found"}), 404
+    try:
+        config = Config()  # Initialize Config
+        data_file_path = config.RAW_DATA_PATH / "predictive_maintenance.csv"
+        logger.debug(f"Data file path: {data_file_path}")
 
-    df = pd.read_csv(data_file_path)
-    if "Failure Type" not in df.columns:
-        logger.error("Failure Type column not found in the data")
-        return jsonify({"error": "Failure Type column not found in the data"}), 404
+        if not data_file_path.exists():
+            logger.error(f"Data file not found at {data_file_path}")
+            return jsonify({"error": "Data file not found"}), 404
 
-    class_names = df["Failure Type"].unique().tolist()
-    return jsonify({"class_names": class_names})
+        df = pd.read_csv(data_file_path)
+        if config.TARGET_COLUMN not in df.columns:
+            logger.error(f"{config.TARGET_COLUMN} column not found in the data")
+            return (
+                jsonify(
+                    {"error": f"{config.TARGET_COLUMN} column not found in the data"}
+                ),
+                404,
+            )
+
+        class_names = df[config.TARGET_COLUMN].unique().tolist()
+        return jsonify({"class_names": class_names})
+    except Exception as e:
+        logger.error(f"Error retrieving class names: {e}")
+        return jsonify({"error": str(e)}), 500
