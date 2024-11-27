@@ -5,6 +5,7 @@ import numpy as np  # Add this import
 from flask import jsonify
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from app.config import Config
+from pathlib import Path  # Import Path
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,10 @@ def get_confusion_matrix(
     flask.Response
         JSON response with the confusion matrix or an error message.
     """
-    test_data_path = config.TEST_DATA_PATH
+    test_data_path = config.TEST_DATA_PATH  # Use Config to get test data path
     if not test_data_path.exists():
         logger.error(f"Test data file not found at {test_data_path}")
-        return jsonify({"error": "Test data file not found"}), 404
+        return jsonify({"error": f"Test data file not found at {test_data_path}"}), 404
 
     logger.info(f"Loading test data from {test_data_path}")
     test_data = pd.read_csv(test_data_path)
@@ -82,7 +83,7 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
     flask.Response
         JSON response with the false positive rate, true positive rate, and AUC.
     """
-    test_data_path = config.TEST_DATA_PATH
+    test_data_path = config.TEST_DATA_PATH  # Use Config to get test data path
     if not test_data_path.exists():
         logger.error(f"Test data file not found at {test_data_path}")
         return (
