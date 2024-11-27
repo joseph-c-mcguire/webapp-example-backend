@@ -2,8 +2,9 @@ import os
 import logging
 import pandas as pd
 import json
-from flask import jsonify
+from flask import jsonify, request
 from app.utils.data_utils import load_config
+from app.config import Config  # Import Config
 
 logger = logging.getLogger(__name__)
 
@@ -105,23 +106,20 @@ def get_training_progress():
 
 def get_available_models():
     """
-    Get the list of available models from the train_model.yaml configuration.
+    Get the list of available models from the configuration.
 
     Returns
     -------
     flask.Response
         JSON response with the list of available models.
     """
-    config_path = os.getenv(
-        "CONFIG_PATH", os.path.join(os.path.dirname(__file__), "train_model.yaml")
-    )
-    logger.debug(f"Config path: {config_path}")
-    if not os.path.exists(config_path):
-        return jsonify({"error": "Configuration file not found"}), 404
-
-    config = load_config(config_path)
-    available_models = list(config["models"].keys())
-    return jsonify({"available_models": available_models})
+    try:
+        config = Config()  # Initialize Config
+        available_models = list(config.MODEL_PARAMETERS.keys())  # Get model names
+        return jsonify({"available_models": available_models})
+    except Exception as e:
+        logger.error(f"Error retrieving available models: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 def get_class_names():
