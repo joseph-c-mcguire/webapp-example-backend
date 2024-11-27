@@ -8,6 +8,8 @@ from app.config import Config  # Ensure Config is imported
 
 logger = logging.getLogger(__name__)
 
+config = Config()  # Ensure this line is present
+
 
 class InferenceService:
     """

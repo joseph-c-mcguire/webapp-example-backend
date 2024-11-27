@@ -4,8 +4,11 @@ import pandas as pd
 import numpy as np  # Add this import
 from flask import jsonify
 from sklearn.metrics import confusion_matrix, roc_curve, auc
+from app.config import Config
 
 logger = logging.getLogger(__name__)
+
+config = Config()  # Add this line to instantiate Config
 
 
 def get_confusion_matrix(
@@ -32,15 +35,15 @@ def get_confusion_matrix(
     flask.Response
         JSON response with the confusion matrix or an error message.
     """
-    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
-    if not os.path.exists(test_file_path):
-        logger.error(f"Test data file not found at {test_file_path}")
+    test_data_path = config.TEST_DATA_PATH
+    if not test_data_path.exists():
+        logger.error(f"Test data file not found at {test_data_path}")
         return jsonify({"error": "Test data file not found"}), 404
 
-    logger.info(f"Loading test data from {test_file_path}")
-    df = pd.read_csv(test_file_path)
-    df = df[
-        df[class_label_column] == target_label
+    logger.info(f"Loading test data from {test_data_path}")
+    test_data = pd.read_csv(test_data_path)
+    df = test_data[
+        test_data[class_label_column] == target_label
     ]  # Filter the data to only include the specified class label
     try:
         features = df.drop(class_label_column, axis=1)
@@ -59,7 +62,7 @@ def get_confusion_matrix(
         return jsonify({"error": str(e)}), 400
 
 
-def get_roc_curve(model, preprocessor, model_name: str, class_label: int):
+def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
     """
     Generate the ROC curve data for the specified model using test data from test_data.csv.
 
@@ -79,24 +82,31 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: int):
     flask.Response
         JSON response with the false positive rate, true positive rate, and AUC.
     """
-    test_file_path = os.path.join(os.path.dirname(__file__), "data", "test_data.csv")
-    if not os.path.exists(test_file_path):
-        logger.error(f"Test data file not found at {test_file_path}")
-        return jsonify({"error": "Test data file not found"}), 404
+    test_data_path = config.TEST_DATA_PATH
+    if not test_data_path.exists():
+        logger.error(f"Test data file not found at {test_data_path}")
+        return (
+            jsonify(
+                {
+                    "error": "Test data file not found. Please ensure 'test_data.csv' exists in the 'data/processed' directory."
+                }
+            ),
+            404,
+        )
 
-    logger.info(f"Loading test data from {test_file_path}")
-    df = pd.read_csv(test_file_path)
+    logger.info(f"Loading test data from {test_data_path}")
+    test_data = pd.read_csv(test_data_path)
+    df = test_data
     try:
-        features = df.drop(columns=[df.columns[class_label]])
-        labels = df.iloc[:, class_label]
+        features = df.drop(columns=[config.TARGET_COLUMN])
+        labels = df[config.TARGET_COLUMN].apply(lambda x: 1 if x == class_label else 0)
         features = preprocessor.transform(features)
         logger.info("Generating ROC curve data")
         probabilities = model.predict_proba(features)
-        probabilities = np.array(probabilities)  # Convert probabilities to NumPy array
-        class_index = list(model.classes_).index(class_label)
+        probabilities = np.array(probabilities)
         fpr, tpr, _ = roc_curve(
-            labels, probabilities[:, class_index], pos_label=class_label
-        )
+            labels, probabilities[:, 1]
+        )  # Assuming class_label is the positive class
         roc_auc = auc(fpr, tpr)
         logger.debug(f"ROC AUC: {roc_auc}")
         return (

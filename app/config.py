@@ -75,6 +75,9 @@ class Config:
     PREPROCESSOR_PATH: Path = config(
         "PREPROCESSOR_PATH", default=MODEL_PATH / "preprocessor.pkl"
     )
+    TEST_DATA_PATH: Path = config(
+        "TEST_DATA_PATH", default=DATA_PATH / "processed" / "test_data.csv"
+    )
     DEBUG: bool = config("DEBUG", default=False, cast=bool)
     TESTING: bool = config("TESTING", default=False, cast=bool)
     PORT: int = config("PORT", default=80, cast=int)
