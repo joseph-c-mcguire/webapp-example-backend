@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.routes import register_routes
 from app.extensions import init_app as init_extensions
@@ -44,8 +44,11 @@ def create_app() -> Flask:
     app.register_blueprint(helper_service_bp)
 
     # Add a route for '/'
-    @app.route("/")
-    def index():
-        return "Welcome to the Machine Learning API"
+    @app.route("/", methods=["GET"])
+    def root():
+        return jsonify({"message": "Welcome to the Model Training API"}), 200
 
     return app
+
+
+app = create_app()
