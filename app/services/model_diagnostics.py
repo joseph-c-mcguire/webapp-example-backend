@@ -43,12 +43,10 @@ def get_confusion_matrix(
 
     logger.info(f"Loading test data from {test_data_path}")
     test_data = pd.read_csv(test_data_path)
-    df = test_data[
-        test_data[class_label_column] == target_label
-    ]  # Filter the data to only include the specified class label
+    df = test_data
     try:
-        features = df.drop(class_label_column, axis=1)
-        labels = df[class_label_column]
+        features = df.drop(config.TARGET_COLUMN, axis=1)
+        labels = df[config.TARGET_COLUMN]
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
