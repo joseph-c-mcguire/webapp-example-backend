@@ -22,13 +22,6 @@ logger = logging.getLogger(__name__)
 config = Config()  # Singleton instance
 model_manager = ModelManager(config.MODEL_PATH)
 
-# Initialize InferenceService
-preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"  # Updated path
-preprocessor = joblib.load(preprocessor_path)
-inference_service = InferenceService(
-    preprocessor=preprocessor, model_path=config.MODEL_PATH
-)  # Updated instantiation
-
 
 @model_serving_bp.route("/predict-probabilities", methods=["POST"])
 def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]:
@@ -46,6 +39,15 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
         - On error: A dictionary with an error message and the corresponding HTTP status code.
     """
     try:
+        # Load preprocessor and initialize InferenceService inside the function
+        config = Config()
+        preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"
+        logger.info(f"Loading preprocessor from {preprocessor_path}")
+        preprocessor = joblib.load(preprocessor_path)
+        inference_service = InferenceService(
+            preprocessor=preprocessor, model_path=config.MODEL_PATH
+        )
+
         data = request.get_json(
             force=False, silent=True
         )  # Do not force, use silent parsing

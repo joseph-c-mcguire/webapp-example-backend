@@ -55,9 +55,7 @@ def train_model():
     # Proceed with training the model using TrainingService
     try:
         logger.info("Starting model training")
-        training_service = TrainingService(
-            config_path=os.path.join(data_path, "config.json")
-        )
+        training_service = TrainingService(config_path=config.CONFIG_PATH)
         result = training_service.train_model()
         return jsonify({"message": "Model training completed successfully"}), 200
     except Exception as e:

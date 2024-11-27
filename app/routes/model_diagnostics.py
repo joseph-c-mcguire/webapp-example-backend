@@ -7,12 +7,10 @@ from app.services.model_diagnostics import (
 )  # Import the new function
 from app.models.model_manager import ModelManager
 from app.config import Config
+import joblib
 
 model_diagnostics_bp = Blueprint("model_diagnostics", __name__)
 logger = logging.getLogger(__name__)
-
-config = Config()  # Singleton instance
-model_manager = ModelManager(config.MODEL_PATH)
 
 
 @model_diagnostics_bp.route("/confusion-matrix", methods=["POST"])
@@ -37,12 +35,26 @@ def confusion_matrix_endpoint():
     logger.info(f"Model name: {model_name}")
     logger.info(f"Class label: {class_label}")
 
-    model, error = model_manager.load_model(model_name)
-    if error:
-        return jsonify({"error": error}), 404
+    # Load model and preprocessor inside the function
+    try:
+        config = Config()
+        model_manager = ModelManager(config.MODEL_PATH)  # Instantiate model_manager
+        model, error = model_manager.load_model(model_name)
+        if error:
+            return jsonify({"error": error}), 404
+        preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"
+        logger.info(f"Loading preprocessor from {preprocessor_path}")
+        preprocessor = joblib.load(preprocessor_path)
+    except Exception as e:
+        logger.error(f"Error loading model or preprocessor: {e}")
+        return jsonify({"error": "Failed to load model or preprocessor."}), 500
 
     return get_confusion_matrix(
-        model, model_manager.preprocessor, model_name, class_label
+        model,
+        preprocessor,
+        model_name,
+        class_label_column=config.TARGET_COLUMN,
+        target_label=class_label,
     )
 
 
@@ -68,11 +80,25 @@ def roc_curve_endpoint():
     logger.info(f"Model name: {model_name}")
     logger.info(f"Class label: {class_label}")
 
-    model, error = model_manager.load_model(model_name)
-    if error:
-        return jsonify({"error": error}), 404
+    try:
+        config = Config()
+        model_manager = ModelManager(config.MODEL_PATH)  # Instantiate model_manager
+        model, error = model_manager.load_model(model_name)
+        if error:
+            return jsonify({"error": error}), 404
+        preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"
+        logger.info(f"Loading preprocessor from {preprocessor_path}")
+        preprocessor = joblib.load(preprocessor_path)
+    except Exception as e:
+        logger.error(f"Error loading model or preprocessor: {e}")
+        return jsonify({"error": "Failed to load model or preprocessor."}), 500
 
-    return get_roc_curve(model, model_manager.preprocessor, model_name, class_label)
+    return get_roc_curve(
+        model,
+        preprocessor,
+        model_name,
+        class_label,
+    )
 
 
 @model_diagnostics_bp.route("/feature-importance", methods=["GET"])
@@ -91,9 +117,19 @@ def feature_importance_endpoint():
     model_name = request.args.get("model_name", "Gradient Boosting")
     logger.debug(f"Model name: {model_name}")
 
-    model, error = model_manager.load_model(model_name)
-    if error:
-        return jsonify({"error": error}), 404
+    try:
+        config = Config()
+        model_manager = ModelManager(config.MODEL_PATH)  # Instantiate model_manager
+        model, error = model_manager.load_model(model_name)
+        if error:
+            return jsonify({"error": error}), 404
+        # Ensure feature names are retrieved appropriately
+        preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"
+        preprocessor = joblib.load(preprocessor_path)
+        feature_names = preprocessor.get_feature_names_out()
+    except Exception as e:
+        logger.error(f"Error loading model or preprocessor: {e}")
+        return jsonify({"error": "Failed to load model or preprocessor."}), 500
 
     feature_names = model_manager.get_feature_names()
     return get_feature_importance(model, feature_names)
