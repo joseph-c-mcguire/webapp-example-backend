@@ -152,7 +152,9 @@ def feature_importance_endpoint():
         # Ensure feature names are retrieved appropriately
         preprocessor_path = config.MODEL_PATH / "preprocessor.pkl"
         preprocessor = joblib.load(preprocessor_path)
-        feature_names = preprocessor.get_feature_names_out()
+        feature_names = (
+            preprocessor.get_feature_names_out()
+        )  # Replace model_manager.get_feature_names()
     except Exception as e:
         logger.error(f"Error loading model or preprocessor: {e}")
         return jsonify({"error": "Failed to load model or preprocessor."}), 500

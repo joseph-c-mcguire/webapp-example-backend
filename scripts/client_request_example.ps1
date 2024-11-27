@@ -6,7 +6,7 @@ if (-Not (Test-Path $testDataPath)) {
     exit
 }
 
-$uri = "http://127.0.0.1:5000/api/diagnostics/confusion-matrix"
+$uri = "http://127.0.0.1:5000/api/diagnostics/roc-curve"
 $body = @{
     model_name = "Decision Tree"
     class_label = "No Failure"  # Ensure this is the correct positive class

@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify
+from flask_cors import CORS
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.routes import register_routes
 from app.extensions import init_app as init_extensions
@@ -16,6 +17,9 @@ def create_app() -> Flask:
         The configured Flask application instance.
     """
     app = Flask(__name__)
+
+    # Enable CORS for all routes with specific origins
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost"}})
 
     # Load configuration based on environment
     env: str = os.getenv("FLASK_ENV", "development")
