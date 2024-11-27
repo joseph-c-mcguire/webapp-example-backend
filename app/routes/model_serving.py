@@ -16,7 +16,7 @@ from app.models.model_manager import ModelManager
 from app.services.inference_service import InferenceService  # Ensure proper import
 from app.services.helper_service import get_data  # Import the new service
 
-model_serving_bp = Blueprint("model_serving", __name__)
+model_serving_bp = Blueprint("model_serving", __name__, url_prefix="/")
 logger = logging.getLogger(__name__)
 
 config = Config()  # Singleton instance

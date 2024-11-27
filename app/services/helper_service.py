@@ -18,9 +18,8 @@ def get_data():
     flask.Response
         JSON response with the data or an error message.
     """
-    data_file_path = os.path.join(
-        os.path.dirname(__file__), "data", "predictive_maintenance.csv"
-    )
+    config = Config()  # Initialize Config
+    data_file_path = config.RAW_DATA_PATH
     logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
@@ -133,7 +132,7 @@ def get_class_names():
     """
     try:
         config = Config()  # Initialize Config
-        data_file_path = config.RAW_DATA_PATH / "predictive_maintenance.csv"
+        data_file_path = config.RAW_DATA_PATH
         logger.debug(f"Data file path: {data_file_path}")
 
         if not data_file_path.exists():

@@ -14,6 +14,7 @@ from app.utils.model_utils import get_model
 from app.models.model_manager import ModelManager  # Import ModelManager
 from typing import Dict, Any
 from app.config import Config  # Ensure Config is imported
+from pathlib import Path
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class TrainingService:
         Path where processed data is stored.
     """
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: Path):
         """
         Initialize the TrainingService with configuration settings.
 
@@ -47,6 +48,9 @@ class TrainingService:
             Path to the configuration file.
         """
         self.config = Config(config_path)  # Pass config_path to Config
+        self.config.PROCESSED_DATA_PATH = Path(
+            self.config.PROCESSED_DATA_PATH
+        )  # Ensure Path
         self.model_manager = ModelManager(self.config.MODEL_PATH)
         self.raw_data_path = self.config.RAW_DATA_PATH
         self.processed_data_path = self.config.PROCESSED_DATA_PATH

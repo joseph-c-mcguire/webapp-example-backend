@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from app.routes.model_training import model_training_bp
+from pathlib import Path  # Import Path
 
 
 @pytest.fixture
@@ -10,6 +11,36 @@ def client():
     app.register_blueprint(model_training_bp)
     with app.test_client() as client:
         yield client
+
+
+@pytest.fixture
+def mock_config(synthetic_data_path):
+    return {
+        "RAW_DATA_PATH": Path(synthetic_data_path),
+        "PROCESSED_DATA_PATH": Path(synthetic_data_path),
+        "MODEL_PATH": "path/to/models",
+        "TARGET_COLUMN": "Target",
+        "COLUMNS_TO_DROP": ["UDI", "Product ID"],
+        "COLUMNS_TO_SCALE": [
+            "Air temperature [K]",
+            "Process temperature [K]",
+            "Rotational speed [rpm]",
+            "Torque [Nm]",
+            "Tool wear [min]",
+        ],
+        "COLUMNS_TO_ENCODE": ["Type"],
+        "TRAIN_TEST_SPLIT": {"test_size": 0.2, "random_state": 42},
+        "MODEL_PARAMETERS": {
+            "model1": {
+                "import_module": "sklearn.ensemble",
+                "model_name": "RandomForestClassifier",
+                "model_params": {},
+            }
+        },
+        "PARAM_GRIDS": {
+            "model1": {"n_estimators": [10, 50, 100], "max_depth": [None, 10, 20]}
+        },
+    }
 
 
 @patch("app.routes.model_training.split_data")

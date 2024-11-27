@@ -11,7 +11,7 @@ from .model_diagnostics import model_diagnostics_bp  # Import the new blueprint
 
 
 def register_routes(app):
-    app.register_blueprint(model_serving_bp)
+    app.register_blueprint(model_serving_bp, url_prefix="/")
     app.register_blueprint(model_training_bp)
-    app.register_blueprint(helper_service_bp)  # Register the new blueprint
-    app.register_blueprint(model_diagnostics_bp)  # Register the new blueprint
+    app.register_blueprint(helper_service_bp, url_prefix="/api/helper")
+    app.register_blueprint(model_diagnostics_bp, url_prefix="/api/diagnostics")

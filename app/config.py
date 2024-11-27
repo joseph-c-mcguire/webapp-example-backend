@@ -64,15 +64,13 @@ class Config:
 
     BASE_DIR: Path = Path(__file__).resolve().parent
     MODEL_PATH: Path = config("MODEL_PATH", default=BASE_DIR.parent / "models")
-    DATA_PATH: Path = config("DATA_PATH", default=BASE_DIR.parent / "data")
+    DATA_PATH: Path = BASE_DIR.parent / "data"
     TRAIN_MODEL_CONFIG: Path = config(
         "TRAIN_MODEL_CONFIG", default=BASE_DIR.parent / "train_model.yaml"
     )
-    RAW_DATA_PATH: Path = config(
-        "RAW_DATA_PATH", default=DATA_PATH / "raw" / "predictive_maintenance.csv"
-    )
-    PROCESSED_DATA_PATH: Path = config(
-        "PROCESSED_DATA_PATH", default=DATA_PATH / "processed"
+    RAW_DATA_PATH: Path = DATA_PATH / "raw" / "predictive_maintenance.csv"
+    PROCESSED_DATA_PATH: Path = Path(
+        config("PROCESSED_DATA_PATH", default=DATA_PATH / "processed")
     )
     PREPROCESSOR_PATH: Path = config(
         "PREPROCESSOR_PATH", default=MODEL_PATH / "preprocessor.pkl"

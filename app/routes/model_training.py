@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path  # Import Path
 
 from flask import Blueprint, jsonify
 
@@ -7,7 +8,7 @@ from app.utils.data_preprocessing import split_data
 from app.services.training_service import TrainingService
 from app.config import Config  # Ensure Config is imported
 
-model_training_bp = Blueprint("training", __name__)
+model_training_bp = Blueprint("model_training", __name__)
 logger = logging.getLogger(__name__)
 
 
@@ -23,9 +24,10 @@ def train_model():
 
     """
     config = Config()  # Singleton instance
-    data_path = config.RAW_DATA_PATH
-    train_val_file_path = os.path.join(config.PROCESSED_DATA_PATH, "train_val_data.csv")
-    test_file_path = os.path.join(config.PROCESSED_DATA_PATH, "test_data.csv")
+    data_path = Path(config.RAW_DATA_PATH)  # Convert to Path
+    processed_data_path = Path(config.PROCESSED_DATA_PATH)  # Convert to Path
+    train_val_file_path = processed_data_path / "train_val_data.csv"
+    test_file_path = processed_data_path / "test_data.csv"
     logger.debug(f"Train/validation file path: {train_val_file_path}")
     logger.debug(f"Test file path: {test_file_path}")
 
