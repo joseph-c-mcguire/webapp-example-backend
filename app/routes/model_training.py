@@ -7,7 +7,7 @@ from app.utils.data_preprocessing import split_data
 from app.services.training_service import TrainingService
 from app.config import Config  # Ensure Config is imported
 
-model_training_bp = Blueprint("model_training", __name__)
+model_training_bp = Blueprint("training", __name__)
 logger = logging.getLogger(__name__)
 
 

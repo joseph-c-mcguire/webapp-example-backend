@@ -32,16 +32,25 @@ def create_app() -> Flask:
     # Initialize extensions
     init_extensions(app)
 
-    # Register blueprints
+    # Import blueprints inside the function to avoid circular imports
     from app.routes.model_training import model_training_bp
     from app.routes.model_serving import model_serving_bp
     from app.routes.model_diagnostics import model_diagnostics_bp
     from app.routes.helper_service import helper_service_bp
 
-    app.register_blueprint(model_training_bp)
-    app.register_blueprint(model_serving_bp)
-    app.register_blueprint(model_diagnostics_bp)
-    app.register_blueprint(helper_service_bp)
+    # Register blueprints with unique names and URL prefixes
+    app.register_blueprint(
+        model_training_bp, name="training_bp", url_prefix="/api/training"
+    )
+    app.register_blueprint(
+        model_serving_bp, name="serving_bp", url_prefix="/api/serving"
+    )
+    app.register_blueprint(
+        model_diagnostics_bp, name="diagnostics_bp", url_prefix="/api/diagnostics"
+    )
+    app.register_blueprint(
+        helper_service_bp, name="helper_bp", url_prefix="/api/helper"
+    )
 
     # Add a route for '/'
     @app.route("/", methods=["GET"])
