@@ -14,6 +14,7 @@ from flask import Blueprint, jsonify, request
 from app.config import Config  # Ensure Config is imported
 from app.models.model_manager import ModelManager
 from app.services.inference_service import InferenceService  # Ensure proper import
+from app.services.helper_service import get_data  # Import the new service
 
 model_serving_bp = Blueprint("model_serving", __name__)
 logger = logging.getLogger(__name__)
