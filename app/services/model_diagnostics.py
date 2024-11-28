@@ -49,7 +49,9 @@ def get_confusion_matrix(
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
         predictions = model.predict(features)
-        cm = confusion_matrix(labels, predictions)
+        cm = confusion_matrix(
+            y_true=labels, y_pred=predictions, labels=np.unique(labels)
+        )
         logger.debug(f"Confusion matrix: {cm}")
         return (
             jsonify({"confusion_matrix": cm.tolist()}),
