@@ -121,7 +121,10 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
         roc_auc = auc(fpr, tpr)
         logger.debug(f"ROC AUC: {roc_auc}")
         # Return
-        return jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc})
+        return (
+            jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
+            200,
+        )
     except KeyError as e:
         logger.error(f"Class label '{class_label}' not found in model classes: {e}")
         return (
