@@ -5,18 +5,19 @@ import json
 from flask import jsonify, request
 from app.utils.data_utils import load_config
 from app.config import Config  # Import Config
+from typing import Tuple, Dict, Any
 
 logger = logging.getLogger(__name__)
 
 
-def get_data():
+def get_data() -> Tuple[jsonify, int]:
     """
     Retrieve data from the predictive maintenance CSV file.
 
     Returns
     -------
-    flask.Response
-        JSON response with the data or an error message.
+    Tuple[jsonify, int]
+        JSON response with the data or an error message and HTTP status code.
     """
     logger.info("Starting get_data function")
     config = Config()  # Initialize Config
@@ -29,16 +30,16 @@ def get_data():
     logger.info("Data file loaded successfully")
     data = df.to_dict(orient="records")
     logger.debug(f"Data: {data}")
-    return jsonify(data)
+    return jsonify(data), 200
 
 
-def get_feature_names():
+def get_feature_names() -> jsonify:
     """
     Get the feature names used during training.
 
     Returns
     -------
-    flask.Response
+    jsonify
         JSON response with the feature names.
     """
     logger.info("Starting get_feature_names function")
@@ -52,17 +53,19 @@ def get_feature_names():
     return jsonify({"feature_names": feature_names})
 
 
-def get_model_results():
+def get_model_results() -> Tuple[jsonify, int]:
     """
     Get the results of each model or a specific model.
 
-    Query parameter:
-    - model_name: str, optional, name of the model to query
+    Query Parameters
+    ----------------
+    model_name : str, optional
+        Name of the model to query.
 
     Returns
     -------
-    flask.Response
-        JSON response with the results of each model or the specified model.
+    Tuple[jsonify, int]
+        JSON response with the results of each model or the specified model and HTTP status code.
     """
     logger.info("Starting get_model_results function")
     results_path = os.path.join(
@@ -82,23 +85,23 @@ def get_model_results():
         logger.debug(f"Model name: {model_name}")
         if model_name in model_results:
             logger.info(f"Returning results for model: {model_name}")
-            return jsonify({model_name: model_results[model_name]})
+            return jsonify({model_name: model_results[model_name]}), 200
         else:
             logger.error(f"Model '{model_name}' not found")
             return jsonify({"error": f"Model '{model_name}' not found"}), 404
 
     logger.info("Returning results for all models")
-    return jsonify({"model_results": model_results})
+    return jsonify({"model_results": model_results}), 200
 
 
-def get_training_progress():
+def get_training_progress() -> Tuple[jsonify, int]:
     """
     Get the training progress.
 
     Returns
     -------
-    flask.Response
-        JSON response with the training progress.
+    Tuple[jsonify, int]
+        JSON response with the training progress and HTTP status code.
     """
     logger.info("Starting get_training_progress function")
     progress_path = os.path.join(os.path.dirname(__file__), "models", "progress.json")
@@ -111,37 +114,37 @@ def get_training_progress():
         progress = json.load(f)
 
     logger.info("Returning training progress")
-    return jsonify({"progress": progress})
+    return jsonify({"progress": progress}), 200
 
 
-def get_available_models():
+def get_available_models() -> Tuple[jsonify, int]:
     """
     Get the list of available models from the configuration.
 
     Returns
     -------
-    flask.Response
-        JSON response with the list of available models.
+    Tuple[jsonify, int]
+        JSON response with the list of available models and HTTP status code.
     """
     logger.info("Starting get_available_models function")
     try:
         config = Config()  # Initialize Config
         available_models = list(config.MODEL_PARAMETERS.keys())  # Get model names
         logger.debug(f"Available models: {available_models}")
-        return jsonify({"available_models": available_models})
+        return jsonify({"available_models": available_models}), 200
     except Exception as e:
         logger.error(f"Error retrieving available models: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-def get_class_names():
+def get_class_names() -> Tuple[jsonify, int]:
     """
     Get the class names from the target column in the data.
 
     Returns
     -------
-    flask.Response
-        JSON response with the list of class names.
+    Tuple[jsonify, int]
+        JSON response with the list of class names and HTTP status code.
     """
     logger.info("Starting get_class_names function")
     try:
@@ -184,7 +187,7 @@ def get_class_names():
                 )
             class_names = df[config.TARGET_COLUMN].unique().tolist()
         logger.debug(f"Class names: {class_names}")
-        return jsonify({"class_names": class_names})
+        return jsonify({"class_names": class_names}), 200
     except Exception as e:
         logger.error(f"Error retrieving class names: {e}")
         return jsonify({"error": str(e)}), 500

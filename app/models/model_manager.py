@@ -2,7 +2,7 @@
 Module for managing machine learning models, including saving and loading models.
 """
 
-from typing import Tuple
+from typing import Tuple, Optional
 import joblib
 import logging
 import os
@@ -36,7 +36,7 @@ class ModelManager:
         self.config = Config()  # Singleton instance
         self.model_path = self.config.MODEL_PATH  # Use Config for model path
 
-    def load_model(self, model_name: str) -> Tuple[BaseEstimator, str]:
+    def load_model(self, model_name: str) -> Tuple[Optional[BaseEstimator], str]:
         """
         Load a machine learning model by its name.
 
@@ -47,7 +47,7 @@ class ModelManager:
 
         Returns
         -------
-        Tuple[BaseEstimator, str]
+        Tuple[Optional[BaseEstimator], str]
             A tuple containing the loaded model and an error message if loading failed.
         """
         model_path = self.model_path / f"{model_name}.pkl"
@@ -62,18 +62,20 @@ class ModelManager:
             logger.error(f"Error loading model {model_name}: {e}")
             return None, str(e)
 
-    def save_model(self, model, model_name):
+    def save_model(self, model: BaseEstimator, model_name: str) -> None:
         """
         Save a machine learning model to the specified file path.
 
         Parameters
         ----------
-        model
+        model : BaseEstimator
             The machine learning model object to save.
-        file_path : str
-            The file path where the model will be saved.
+        model_name : str
+            The name of the model file to save.
         """
-        save_path = self.model_path / model_name
+        save_path = self.model_path / (
+            model_name if model_name.endswith(".pkl") else f"{model_name}.pkl"
+        )
         logger.info(f"Saving model to {save_path}")
         joblib.dump(model, save_path)
         logger.info("Model saved successfully")

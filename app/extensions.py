@@ -13,5 +13,10 @@ def init_app(app: Flask) -> None:
     ----------
     app : Flask
         The Flask application instance
+
+    Returns
+    -------
+    None
     """
+    # Initialize CORS with the Flask app
     cors.init_app(app)

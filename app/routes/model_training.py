@@ -1,19 +1,17 @@
 import logging
 import os
-from pathlib import Path  # Import Path
-
-from flask import Blueprint, jsonify
-
+from pathlib import Path
+from flask import Blueprint, jsonify, Response
 from app.utils.data_preprocessing import split_data
 from app.services.training_service import TrainingService
-from app.config import Config  # Ensure Config is imported
+from app.config import Config
 
 model_training_bp = Blueprint("model_training", __name__)
 logger = logging.getLogger(__name__)
 
 
 @model_training_bp.route("/train", methods=["POST"])
-def train_model():
+def train_model() -> Response:
     """
     Train the model by calling the train_model.py script.
 
@@ -21,7 +19,6 @@ def train_model():
     -------
     flask.Response
         JSON response with the result of the training process.
-
     """
     config = Config()  # Singleton instance
     data_path = Path(config.RAW_DATA_PATH)  # Convert to Path

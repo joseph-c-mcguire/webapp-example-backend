@@ -27,6 +27,8 @@ class Config:
         Path to the processed data directory.
     PREPROCESSOR_PATH : Path
         Path to the preprocessor pickle file.
+    TEST_DATA_PATH : Path
+        Path to the test data file.
     DEBUG : bool
         Flag to enable/disable debug mode.
     TESTING : bool
@@ -52,9 +54,9 @@ class Config:
 
     Methods
     -------
-    __new__(cls, config_path: str = None)
+    __new__(cls, config_path: str = None) -> 'Config'
         Creates a new instance of the Config class.
-    setup_logging(self)
+    setup_logging(self) -> None
         Set up centralized logging configuration.
     load_training_model_config(self) -> Dict[str, Any]
         Load model-specific configurations from training_model.yaml.
@@ -82,9 +84,9 @@ class Config:
     TESTING: bool = config("TESTING", default=False, cast=bool)
     PORT: int = config("PORT", default=80, cast=int)
 
-    _instance = None
+    _instance: "Config" = None
 
-    def __new__(cls, config_path: str = None):
+    def __new__(cls, config_path: str = None) -> "Config":
         """
         Create a new instance of Config.
 
@@ -107,7 +109,7 @@ class Config:
             cls._instance.setup_logging()
         return cls._instance
 
-    def setup_logging(self):
+    def setup_logging(self) -> None:
         """
         Set up centralized logging configuration.
 

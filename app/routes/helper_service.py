@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint
+from flask import Blueprint, Response
 from app.services.helper_service import (
     get_data,
     get_feature_names,
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @helper_service_bp.route("/data", methods=["GET"])
-def data_endpoint():
+def data_endpoint() -> Response:
     """
     Endpoint to retrieve data from the predictive maintenance CSV file.
 
@@ -27,7 +27,7 @@ def data_endpoint():
 
 
 @helper_service_bp.route("/feature-names", methods=["GET"])
-def feature_names_endpoint():
+def feature_names_endpoint() -> Response:
     """
     Get the feature names used during training.
 
@@ -40,12 +40,14 @@ def feature_names_endpoint():
 
 
 @helper_service_bp.route("/model-results", methods=["GET"])
-def model_results_endpoint():
+def model_results_endpoint() -> Response:
     """
     Get the results of each model or a specific model.
 
-    Query parameter:
-    - model_name: str, optional, name of the model to query
+    Query Parameters
+    ----------------
+    model_name : str, optional
+        Name of the model to query.
 
     Returns
     -------
@@ -56,7 +58,7 @@ def model_results_endpoint():
 
 
 @helper_service_bp.route("/training-progress", methods=["GET"])
-def training_progress_endpoint():
+def training_progress_endpoint() -> Response:
     """
     Get the training progress.
 
@@ -69,7 +71,7 @@ def training_progress_endpoint():
 
 
 @helper_service_bp.route("/available-models", methods=["GET"])
-def available_models_endpoint():
+def available_models_endpoint() -> Response:
     """
     Get the list of available models from the train_model.yaml configuration.
 
@@ -82,7 +84,7 @@ def available_models_endpoint():
 
 
 @helper_service_bp.route("/class-names", methods=["GET"])
-def class_names_endpoint():
+def class_names_endpoint() -> Response:
     """
     Get the class names from the Failure Type column in the data.
 

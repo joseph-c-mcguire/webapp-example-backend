@@ -28,15 +28,11 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
     """
     Predict probabilities for equipment failure types using the specified model.
 
-    Parameters
-    ----------
-    None
-
     Returns
     -------
     Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
-        - On success: A dictionary containing prediction probabilities.
-        - On error: A dictionary with an error message and the corresponding HTTP status code.
+        On success: A dictionary containing prediction probabilities.
+        On error: A dictionary with an error message and the corresponding HTTP status code.
     """
     try:
         # Load preprocessor and initialize InferenceService inside the function
@@ -48,12 +44,12 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
             preprocessor=preprocessor, model_path=config.MODEL_PATH
         )
 
-        data = request.get_json(
+        data: Union[Dict[str, Any], None] = request.get_json(
             force=False, silent=True
         )  # Do not force, use silent parsing
         if data is None:
-            model_name = "Decision Tree"
-            features = [
+            model_name: str = "Decision Tree"
+            features: list[Dict[str, Union[str, float, int]]] = [
                 {
                     "Type": "M",
                     "Air temperature [K]": 298.1,
@@ -82,8 +78,8 @@ def predict_probabilities() -> Union[Tuple[Dict[str, Any], int], Dict[str, Any]]
         logger.debug(f"Input data: {features}")
 
         # Use InferenceService for prediction
-        prediction_result = inference_service.predict_probabilities(
-            model_name, features
+        prediction_result: Union[Dict[str, Any], None] = (
+            inference_service.predict_probabilities(model_name, features)
         )
 
         if prediction_result is None:

@@ -31,8 +31,8 @@ def preprocess_data(
 
     Returns
     -------
-    Tuple[ColumnTransformer, pd.DataFrame]
-        Preprocessor and preprocessed dataset.
+    tuple
+        A tuple containing the ColumnTransformer and the preprocessed DataFrame.
 
     Examples
     --------
@@ -40,6 +40,8 @@ def preprocess_data(
     >>> print(preprocessed_data.head())
     """
     logger.info("Starting data preprocessing")
+
+    # Initialize lists if None
     if columns_to_drop is None:
         columns_to_drop = []
     if columns_to_scale is None:
@@ -55,9 +57,11 @@ def preprocess_data(
             ("encode_columns", OneHotEncoder(), columns_to_encode),
         ]
     )
-    # Fit the column transformer
+
+    # Fit the column transformer and transform the data
     scaled_data = preprocessor.fit_transform(data)
     logger.info("Data preprocessing completed")
+
     return preprocessor, scaled_data
 
 
@@ -88,15 +92,22 @@ def split_data(
     ------
     FileNotFoundError
         If the data file is not found at the specified path.
+
+    Examples
+    --------
+    >>> split_data("data.csv", "train_val.csv", "test.csv", test_size=0.2, random_state=42)
     """
     logger.info(
         f"Splitting data from {data_file_path} into train/validation and test sets"
     )
     logger.debug(f"Parameters - test_size: {test_size}, random_state: {random_state}")
+
+    # Check if the data file exists
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
         raise FileNotFoundError(f"Data file not found at {data_file_path}")
 
+    # Load the data
     df = pd.read_csv(data_file_path)
     logger.debug(f"Data loaded successfully with shape: {df.shape}")
 

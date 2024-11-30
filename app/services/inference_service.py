@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Union
 from pathlib import Path
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
@@ -25,7 +25,7 @@ class InferenceService:
         Manages model loading and management.
     """
 
-    def __init__(self, preprocessor: BaseEstimator, model_path: Path):
+    def __init__(self, preprocessor: BaseEstimator, model_path: Path) -> None:
         """
         Initialize the InferenceService with the given preprocessor and model path.
 
@@ -36,9 +36,11 @@ class InferenceService:
         model_path : Path
             Path to the directory containing models.
         """
-        self.preprocessor = preprocessor
-        self.config = Config()  # Singleton instance
-        self.model_manager = ModelManager(model_path=self.config.MODEL_PATH)
+        self.preprocessor: BaseEstimator = preprocessor
+        self.config: Config = Config()  # Singleton instance
+        self.model_manager: ModelManager = ModelManager(
+            model_path=self.config.MODEL_PATH
+        )
 
     def predict(self, model_name: str, features: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -61,12 +63,12 @@ class InferenceService:
             return {"error": error}
 
         try:
-            features_df = DataFrame(features, index=[0])
+            features_df: DataFrame = DataFrame(features, index=[0])
             logger.info(f"Predicting with model: {model_name}")
             logger.info(f"Predicting with data: {features_df}")
-            features_transformed = self.preprocessor.transform(features_df)
+            features_transformed: DataFrame = self.preprocessor.transform(features_df)
             logger.info(f"Transformed features: {features_transformed}")
-            prediction = model.predict(features_transformed)
+            prediction: List[Any] = model.predict(features_transformed)
             return {"prediction": prediction[0]}
         except ValueError as e:
             logger.error(f"Error during prediction: {e}")
@@ -128,8 +130,8 @@ class InferenceService:
                     "error": "Invalid data format. Expected a list of dictionaries."
                 }
 
-            features_df = DataFrame(data)
-            features_transformed = self.preprocessor.transform(features_df)
+            features_df: DataFrame = DataFrame(data)
+            features_transformed: DataFrame = self.preprocessor.transform(features_df)
             logger.debug(f"Transformed features: {features_transformed}")
 
             if not hasattr(model, "predict_proba"):
@@ -140,7 +142,9 @@ class InferenceService:
                     "error": f"Model {model_name} does not support probability prediction"
                 }
 
-            probabilities = model.predict_proba(features_transformed)
+            probabilities: Union[List[List[float]], Any] = model.predict_proba(
+                features_transformed
+            )
             return {"probabilities": probabilities.tolist()}
         except ValueError as e:
             logger.error(f"Error during prediction: {e}")

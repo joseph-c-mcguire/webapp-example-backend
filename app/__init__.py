@@ -16,7 +16,7 @@ def create_app() -> Flask:
     Flask
         The configured Flask application instance.
     """
-    app = Flask(__name__)
+    app: Flask = Flask(__name__)
 
     # Enable CORS for all routes with specific origins
     CORS(app, resources={r"/api/*": {"origins": "http://localhost"}})
@@ -38,10 +38,18 @@ def create_app() -> Flask:
 
     # Add a route for '/'
     @app.route("/", methods=["GET"])
-    def root():
+    def root() -> Any:
+        """
+        Root endpoint that returns a welcome message.
+
+        Returns
+        -------
+        Any
+            JSON response with a welcome message and HTTP status code 200.
+        """
         return jsonify({"message": "Welcome to the Model Training API"}), 200
 
     return app
 
 
-app = create_app()
+app: Flask = create_app()

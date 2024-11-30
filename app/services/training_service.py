@@ -26,7 +26,7 @@ class TrainingService:
 
     Attributes
     ----------
-    config_path : str
+    config_path : Path
         Path to the configuration file.
     config : Config
         Loaded configuration settings.
@@ -44,7 +44,7 @@ class TrainingService:
 
         Parameters
         ----------
-        config_path : str
+        config_path : Path
             Path to the configuration file.
         """
         self.config = Config(config_path)  # Pass config_path to Config

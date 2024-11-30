@@ -12,8 +12,12 @@ config = Config()  # Add this line to instantiate Config
 
 
 def get_confusion_matrix(
-    model, preprocessor, model_name: str, class_label_column: str, target_label
-):
+    model: "BaseEstimator",
+    preprocessor: "BaseEstimator",
+    model_name: str,
+    class_label_column: str,
+    target_label: str,
+) -> "flask.Response":
     """
     Get the confusion matrix for the specified model using test data from test_data.csv.
 
@@ -66,7 +70,12 @@ def get_confusion_matrix(
         return jsonify({"error": str(e)}), 400
 
 
-def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
+def get_roc_curve(
+    model: "BaseEstimator",
+    preprocessor: "BaseEstimator",
+    model_name: str,
+    class_label: str,
+) -> "flask.Response":
     """
     Generate the ROC curve data for the specified model using test data from test_data.csv.
 
@@ -110,12 +119,12 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
         logger.info(f"Labels: {labels}")
         features = test_data.drop(columns=config.TARGET_COLUMN)
         features = preprocessor.transform(features)
-        # Grab the predictions, probabilites
+        # Grab the predictions, probabilities
         logger.info("Generating Model Predictions")
         probabilities = model.predict_proba(features)[:, 1]
         # Grab the AUC and ROC data
         logger.info("Generating ROC Curve Data -- FPR, TPR")
-        logger.info(f"Probabilites: {probabilities}; Labels: {labels}")
+        logger.info(f"Probabilities: {probabilities}; Labels: {labels}")
         fpr, tpr, _ = roc_curve(labels, probabilities)
         logger.info("Grabbing AUC")
         roc_auc = auc(fpr, tpr)
@@ -138,7 +147,9 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
         return jsonify({"error": str(e)}), 400
 
 
-def get_feature_importance(model, feature_names: list):
+def get_feature_importance(
+    model: "BaseEstimator", feature_names: list
+) -> "flask.Response":
     """
     Get the feature importance of the specified model.
 
