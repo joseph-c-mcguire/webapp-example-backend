@@ -4,7 +4,7 @@ model_directory: 'models/'
 columns_to_drop: ['Product ID', "Target"]
 columns_to_scale: ['Air temperature [K]', 'Process temperature [K]', 'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']
 columns_to_encode: ['Type']
-target_column: 'Failure Type'
+target_column: ['Failure Type']
 param_grids: {
     'Decision Tree': {
         'max_depth': [null, 10, 20, 30]

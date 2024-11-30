@@ -18,14 +18,17 @@ def get_data():
     flask.Response
         JSON response with the data or an error message.
     """
+    logger.info("Starting get_data function")
     config = Config()  # Initialize Config
-    data_file_path = config.RAW_DATA_PATH
+    data_file_path = config.TEST_DATA_PATH
     logger.debug(f"Data file path: {data_file_path}")
     if not os.path.exists(data_file_path):
         logger.error(f"Data file not found at {data_file_path}")
         return jsonify({"error": "Data file not found"}), 404
     df = pd.read_csv(data_file_path)
+    logger.info("Data file loaded successfully")
     data = df.to_dict(orient="records")
+    logger.debug(f"Data: {data}")
     return jsonify(data)
 
 
@@ -38,6 +41,7 @@ def get_feature_names():
     flask.Response
         JSON response with the feature names.
     """
+    logger.info("Starting get_feature_names function")
     feature_names = [
         "feature1",
         "feature2",
@@ -60,6 +64,7 @@ def get_model_results():
     flask.Response
         JSON response with the results of each model or the specified model.
     """
+    logger.info("Starting get_model_results function")
     results_path = os.path.join(
         os.path.dirname(__file__), "models", "model_results.json"
     )
@@ -76,10 +81,13 @@ def get_model_results():
     if model_name:
         logger.debug(f"Model name: {model_name}")
         if model_name in model_results:
+            logger.info(f"Returning results for model: {model_name}")
             return jsonify({model_name: model_results[model_name]})
         else:
+            logger.error(f"Model '{model_name}' not found")
             return jsonify({"error": f"Model '{model_name}' not found"}), 404
 
+    logger.info("Returning results for all models")
     return jsonify({"model_results": model_results})
 
 
@@ -92,14 +100,17 @@ def get_training_progress():
     flask.Response
         JSON response with the training progress.
     """
+    logger.info("Starting get_training_progress function")
     progress_path = os.path.join(os.path.dirname(__file__), "models", "progress.json")
     logger.debug(f"Progress path: {progress_path}")
     if not os.path.exists(progress_path):
+        logger.error("Progress file not found")
         return jsonify({"error": "Progress file not found"}), 404
 
     with open(progress_path, "r") as f:
         progress = json.load(f)
 
+    logger.info("Returning training progress")
     return jsonify({"progress": progress})
 
 
@@ -112,9 +123,11 @@ def get_available_models():
     flask.Response
         JSON response with the list of available models.
     """
+    logger.info("Starting get_available_models function")
     try:
         config = Config()  # Initialize Config
         available_models = list(config.MODEL_PARAMETERS.keys())  # Get model names
+        logger.debug(f"Available models: {available_models}")
         return jsonify({"available_models": available_models})
     except Exception as e:
         logger.error(f"Error retrieving available models: {e}")
@@ -130,26 +143,47 @@ def get_class_names():
     flask.Response
         JSON response with the list of class names.
     """
+    logger.info("Starting get_class_names function")
     try:
         config = Config()  # Initialize Config
-        data_file_path = config.RAW_DATA_PATH
+        data_file_path = str(config.RAW_DATA_PATH)  # Convert to string
         logger.debug(f"Data file path: {data_file_path}")
 
-        if not data_file_path.exists():
+        if not os.path.exists(data_file_path):  # Check existence correctly
             logger.error(f"Data file not found at {data_file_path}")
             return jsonify({"error": "Data file not found"}), 404
 
         df = pd.read_csv(data_file_path)
-        if config.TARGET_COLUMN not in df.columns:
-            logger.error(f"{config.TARGET_COLUMN} column not found in the data")
-            return (
-                jsonify(
-                    {"error": f"{config.TARGET_COLUMN} column not found in the data"}
-                ),
-                404,
-            )
-
-        class_names = df[config.TARGET_COLUMN].unique().tolist()
+        logger.info("Data file loaded successfully")
+        if isinstance(config.TARGET_COLUMN, list):
+            missing_columns = [
+                col for col in config.TARGET_COLUMN if col not in df.columns
+            ]
+            if missing_columns:
+                logger.error(f"Columns {missing_columns} not found in the data")
+                return (
+                    jsonify(
+                        {"error": f"Columns {missing_columns} not found in the data"}
+                    ),
+                    404,
+                )
+            class_names = []
+            for col in config.TARGET_COLUMN:
+                class_names.extend(df[col].unique().tolist())
+            class_names = list(set(class_names))
+        else:
+            if config.TARGET_COLUMN not in df.columns:
+                logger.error(f"{config.TARGET_COLUMN} column not found in the data")
+                return (
+                    jsonify(
+                        {
+                            "error": f"{config.TARGET_COLUMN} column not found in the data"
+                        }
+                    ),
+                    404,
+                )
+            class_names = df[config.TARGET_COLUMN].unique().tolist()
+        logger.debug(f"Class names: {class_names}")
         return jsonify({"class_names": class_names})
     except Exception as e:
         logger.error(f"Error retrieving class names: {e}")

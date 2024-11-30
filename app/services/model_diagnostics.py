@@ -35,6 +35,9 @@ def get_confusion_matrix(
     flask.Response
         JSON response with the confusion matrix or an error message.
     """
+    logger.info(
+        f"Getting confusion matrix for model: {model_name}, class label column: {class_label_column}, target label: {target_label}"
+    )
     test_data_path = config.TEST_DATA_PATH  # Use Config to get test data path
     if not test_data_path.exists():
         logger.error(f"Test data file not found at {test_data_path}")
@@ -44,7 +47,8 @@ def get_confusion_matrix(
     test_data = pd.read_csv(test_data_path)
     df = test_data
     try:
-        features = df.drop(config.TARGET_COLUMN, axis=1)
+        logger.info("Preparing features and labels for prediction")
+        features = df.drop(config.COLUMNS_TO_DROP + config.TARGET_COLUMN, axis=1)
         labels = df[config.TARGET_COLUMN]
         features = preprocessor.transform(features)
         logger.info("Calculating confusion matrix")
@@ -82,6 +86,9 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
     flask.Response
         JSON response with the false positive rate, true positive rate, and AUC.
     """
+    logger.info(
+        f"Generating ROC curve for model: {model_name}, class label: {class_label}"
+    )
     test_data_path = config.TEST_DATA_PATH  # Use Config to get test data path
     if not test_data_path.exists():
         logger.error(f"Test data file not found at {test_data_path}")
@@ -96,27 +103,31 @@ def get_roc_curve(model, preprocessor, model_name: str, class_label: str):
 
     logger.info(f"Loading test data from {test_data_path}")
     test_data = pd.read_csv(test_data_path)
-    df = test_data
+    logger.info(f"test_data: {test_data}")
     try:
-        features = df.drop(columns=[config.TARGET_COLUMN])
-        labels = df[config.TARGET_COLUMN].apply(lambda x: 1 if x == class_label else 0)
+        logger.info("Preparing features and labels for ROC curve generation")
+        labels = (test_data[config.TARGET_COLUMN] == class_label).astype(int)
+        logger.info(f"Labels: {labels}")
+        features = test_data.drop(columns=config.TARGET_COLUMN)
         features = preprocessor.transform(features)
-        logger.info("Generating ROC curve data")
-        probabilities = model.predict_proba(features)
-        probabilities = np.array(probabilities)
-        fpr, tpr, _ = roc_curve(
-            labels, probabilities[:, 1]
-        )  # Assuming class_label is the positive class
+        # Grab the predictions, probabilites
+        logger.info("Generating Model Predictions")
+        probabilities = model.predict_proba(features)[:, 1]
+        # Grab the AUC and ROC data
+        logger.info("Generating ROC Curve Data -- FPR, TPR")
+        logger.info(f"Probabilites: {probabilities}; Labels: {labels}")
+        fpr, tpr, _ = roc_curve(labels, probabilities)
+        logger.info("Grabbing AUC")
         roc_auc = auc(fpr, tpr)
         logger.debug(f"ROC AUC: {roc_auc}")
-        return (
-            jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
-            200,
-        )
+        # Return
+        return jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc})
     except KeyError as e:
-        logger.error(f"Class label {class_label} not found in model classes: {e}")
+        logger.error(f"Class label '{class_label}' not found in model classes: {e}")
         return (
-            jsonify({"error": f"Class label {class_label} not found in model classes"}),
+            jsonify(
+                {"error": f"Class label '{class_label}' not found in model classes"}
+            ),
             400,
         )
     except Exception as e:
@@ -140,6 +151,7 @@ def get_feature_importance(model, feature_names: list):
     flask.Response
         JSON response with the feature importance or an error message.
     """
+    logger.info("Getting feature importance for the model")
     try:
         # Assuming the model has a feature_importances_ attribute
         feature_importances = model.feature_importances_

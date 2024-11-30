@@ -2,78 +2,27 @@
 
 ## Overview
 
-This project is a back-end system for a predictive maintenance application. The system is designed to predict equipment failures based on various sensor data inputs. It includes functionalities for data preprocessing, model training, and serving predictions via a REST API.
+This project is a backend system for a predictive maintenance application.
+The system is designed for training, serving, and producing diagnostics for a set of models trained on a UCI dataset, more info can be found here: [https://webapp-example-frontend-56f2ec31cf0a.herokuapp.com/](https://webapp-example-frontend-56f2ec31cf0a.herokuapp.com/)
+This was a learning exercise to build a full-stack web application, the frontend repo can be found here: [https://github.com/joseph-c-mcguire/webapp-example-frontend](https://github.com/joseph-c-mcguire/webapp-example-frontend).
 
-## Architectural Overview
+## Description
+The data-set in question is a [predictive maintenance](https://archive.ics.uci.edu/ml/datasets/AI4I+2020+Predictive+Maintenance+Dataset) hosted by the University of California, Irvine, and can also be found on Kaggle.com.
+I trained 3 sample models, which can be configured with the train_model.yaml file, to deal with the multi-class classification problem.
+Namely Decision Tree, Gradient Boosting, and Random Forest models.
+These were selected due to them all sharing the same class structure in Scikit-Learn, and being good for comparison as they're all decision-tree based models or ensembles of decision-trees.
+So this made the retrieving of attributes like `feature_importances_`, and methods like `predict_proba` consistent across the different models.
 
-The architecture of the predictive maintenance system is designed to be modular and scalable. Below is an overview of the main components:
+The backend is built on a Flask server, you can run it locally by running `run.py` and the production server uses `app.py`.
+The main difference is that `run.py` has debug enabled, while `app.py` does not.
+Also `app.py` deals with cross-browser functionality by using the CORS extension of Flask.
 
-1. **Data Processing**:
-    - **Module**: `src/data_processing/split_data.py`
-    - **Functionality**: This module handles the preprocessing of raw data. It splits the dataset into training/validation and testing sets, ensuring that the data is ready for model training and evaluation.
-    - **Key Functions**: `split_data`
+## Design Highlights
 
-2. **Model Training**:
-    - **Module**: `src/model_training/train_model.py`
-    - **Functionality**: This module is responsible for training the predictive model. It loads the preprocessed data, trains the model using machine learning algorithms, and saves the trained model for future use.
-    - **Key Functions**: `train_model`
-
-3. **API Serving**:
-    - **Module**: `src/api_serving/serve_model.py`
-    - **Functionality**: This module serves the trained model via a REST API. It handles incoming prediction requests, processes the input data, and returns the prediction results.
-    - **Key Functions**: `predict`, `train_model`
-
-4. **Configuration Management**:
-    - **Module**: `src/utils/data_utils.py`
-    - **Functionality**: This module manages the configuration settings for the system. It loads configuration parameters from YAML files, making the system flexible and easy to configure.
-    - **Key Functions**: `load_config`
-
-5. **Logging and Error Handling**:
-    - **Logging**: Comprehensive logging is implemented across all modules using Python's built-in `logging` module. This helps in monitoring the system's operations and debugging issues.
-    - **Error Handling**: Robust error handling mechanisms are in place to ensure the system can gracefully handle unexpected situations and provide useful error messages.
-
-6. **Dockerization**:
-    - The entire application is containerized using Docker. This ensures consistency across different environments and simplifies deployment. The Docker setup includes a Dockerfile that defines the environment and dependencies required to run the application.
-    - Note: While Docker is not used in the primary deployment pipeline, it can be used for independent deployment and testing. This allows developers to run the application in a consistent environment without worrying about local setup issues.
-
-## Major Design Decisions
-
-1. **Modular Design**: 
-    - The project is divided into distinct modules for data processing (`src/data_processing/split_data.py`), model training (`src/model_training/train_model.py`), and API serving (`src/api_serving/serve_model.py`). 
-    - This separation of concerns ensures that each module can be developed, tested, and maintained independently, improving the overall maintainability and scalability of the system.
-
-2. **Logging**: 
-    - Comprehensive logging is implemented using Python's built-in `logging` module. 
-    - Different log levels (INFO, DEBUG, ERROR) are used to capture various types of information, from general operational messages to detailed debugging information and error reports. 
-    - This facilitates easier debugging and monitoring of the system's operations.
-
-3. **Error Handling**: 
-    - Robust error handling mechanisms are in place to ensure the system can gracefully handle unexpected situations. 
-    - For example, the `load_config` function in `src/utils/data_utils.py` catches specific exceptions like `FileNotFoundError` and `YAMLError` and logs appropriate error messages. 
-    - This prevents the system from crashing and provides useful information for diagnosing issues.
-
-4. **Dockerization**: 
-    - The application is containerized using Docker to ensure consistency across different environments and simplify deployment. 
-    - Docker allows the application to run in isolated containers, ensuring that it behaves the same way regardless of where it is deployed. 
-    - This eliminates issues related to environment differences and makes it easier to manage dependencies.
-    - Note: While Docker is not used in the primary deployment pipeline, it can be used for independent deployment and testing. This allows developers to run the application in a consistent environment without worrying about local setup issues.
-
-5. **Configuration Management**: 
-    - YAML configuration files are used to manage various settings, making the system flexible and easy to configure. 
-    - The `load_config` function in `src/utils/data_utils.py` loads configuration settings from a YAML file, allowing different configurations to be easily applied without changing the code. 
-    - This approach enhances the flexibility and adaptability of the system.
-
-## Contributions
-
-1. **Data Processing**: Implemented the `split_data` function to split the dataset into training/validation and testing sets.
-2. **Model Training**: Developed the model training script (`src/model_training/train_model.py`) to train and save the predictive model.
-3. **API Development**: Created the Flask API (`src/api_serving/serve_model.py`) to serve predictions and handle incoming requests.
-4. **Testing**: Wrote unit tests (`tests/test_split_data.py`) to ensure the correctness of the data splitting functionality.
-5. **Documentation**: Updated the README with detailed instructions on installation, running tests, and using the API.
-
-## Reason for Choosing This Project
-
-I chose this project because it addresses a real-world problem of predictive maintenance, which is crucial for industries relying on machinery and equipment. The project allowed me to demonstrate my skills in data processing, machine learning, API development, and software engineering best practices. Additionally, it provided an opportunity to work on a comprehensive system that integrates various components, from data handling to model serving.
+- **Extendable:** With the structure of the routes and services for the API, one can easily add new functionalities on to the API, and add end-points to access them.
+- **Micro-Services Ready:** As this is set now, separate services can be containerized and orchestrator through Docker and Docker-Compose to build a scalable micro-services platform.
+- **Documentation:** Through documentation is included in doc-strings and code comments to ensure readability and accessibility for new developers, if they're interested in using this as a template to build on.
+- **Testing:** Unit testing is provided to cover a majority of the codebase, and to be expanded upon in the future, to ensure functionality between the front-end and this back-end API is in continuous sync. A CI pipeline ensures that pushes and merges are maintaining functionality at development time.
 
 ## Installation
 
@@ -104,96 +53,212 @@ If you encounter issues while running the unit tests, consider the following ste
 pytest -v
 ```
 
-## Running the API
-To run the API, follow these steps:
+## Repository Structure
 
-1. Ensure you have the trained model and ModelMonitor saved in the specified paths. By default, these are models/best_model.pkl and models/model_monitor.pkl.
+### `run.py` & `app.py`
+`run.py` is the development server call function, while `app.py` is the production server.
 
-2. Set the environment variables for the model and monitor paths if they are different from the default:
-```sh
-export MODEL_PATH=path/to/your/best_model.pkl
-export MONITOR_PATH=path/to/your/model_monitor.pkl
-export CONFIG_PATH=path/to/your/config.yaml
-```
+### `app/`
 
-3. Start the Flask API:
-```sh
-python serve_model.py
-```
-The API will be available at http://0.0.0.0:5000.
+Holds all the source code for the project
 
-## Running the API via Docker
-To run the API using Docker, follow these steps:
+#### `app/models/`
+Holds the `model_manager` class, which deals with the loading and saving of the models.
 
-1. Build the Docker image:
-```sh
-docker build -t predictive-maintenance-api .
-```
+#### `app/routes/`
+Holds the Flask routing for different services, specifying the endpoints, routes and any request handling and logging here.
 
-2. Run the Docker container:
-```sh
-docker run -p 5000:5000 -e MODEL_PATH=path/to/your/best_model.pkl -e MONITOR_PATH=path/to/your/model_monitor.pkl -e CONFIG_PATH=path/to/your/config.yaml predictive-maintenance-api
-```
+#### `app/services/`
+Holds the main logic of the API, and the internal logic behind the endpoints, including helper, serving, training and diagnostic functions.
 
-The API will be available at http://0.0.0.0:5000.
+#### `app/utils/`
+Holds miscellaneous utility functions
 
-## API Endpoints
-Predict Equipment Failure
-**Endpoint**: /predict
+#### `app/config.py`
+Deals with environmental variables, like file-paths, training parameters, data set parameters, etc.
 
-**Method**: POST
+#### `app/extensions.py`
+Deals with adding Flask extensions like CORS.
 
-### Request JSON format:
+### `data/`
+Holds the processed and raw data files for the project
+
+### `models/`
+Holds the trained models for the project that are used by the frontend for serving.
+
+### `scripts/`
+Currently just holds one script that has a sample CURL request for using the API.
+
+### `tests/`
+Holds the unit tests for the repository.
+
+## API Documentation
+
+### Confusion Matrix
+**Endpoint**: `/api/diagnostics/confusion-matrix`
+
+**Method**: `POST`
+
+**Description**: Retrieves the confusion matrix for the specified model and class label using test data.
+
+**Request JSON format**:
 ```json
 {
-    "features": {
-        "Type": "value",
-        "Air temperature [K]": value,
-        "Process temperature [K]": value,
-        "Rotational speed [rpm]": value,
-        "Torque [Nm]": value,
-        "Tool wear [min]": value
+    "model_name": "string",
+    "class_label": "string"
+}
+```
+
+**Response JSON format**:
+```json
+{
+    "confusion_matrix": [
+        [true_negative, false_positive],
+        [false_negative, true_positive]
+    ]
+}
+```
+
+### ROC Curve
+**Endpoint**: `/api/diagnostics/roc-curve`
+
+**Method**: `POST`
+
+**Description**: Retrieves the class-specific ROC curve data for the specified model using test data.
+
+**Request JSON format**:
+```json
+{
+    "model_name": "string",
+    "class_name": "string"
+}
+```
+
+**Response JSON format**:
+```json
+{
+    "fpr": [list_of_false_positive_rates],
+    "tpr": [list_of_true_positive_rates],
+    "thresholds": [list_of_thresholds]
+}
+```
+
+### Feature Importance
+**Endpoint**: `/api/diagnostics/feature-importance`
+
+**Method**: `POST`
+
+**Description**: Retrieves the feature importance scores for the specified model.
+
+**Request JSON format**:
+```json
+{
+    "model_name": "string"
+}
+```
+
+**Response JSON format**:
+```json
+{
+    "feature_importance": {
+        "feature_name_1": importance_score_1,
+        "feature_name_2": importance_score_2,
+        ...
     }
 }
 ```
 
-### Response JSON format:
+### Data Endpoint
+**Endpoint**: `api/helper/data`
+
+**Method**: `GET`
+
+**Description**: Retrieves data from the predictive maintenance CSV file.
+
+**Response**:
+- Returns a JSON array of data records.
+
+### Feature Names
+**Endpoint**: `api/helper/feature-names`
+
+**Method**: `GET`
+
+**Description**: Retrieves the feature names used during training.
+
+**Response JSON format**:
 ```json
 {
-    "prediction": "Failed" or "Not Failed"
+    "feature_names": ["feature1", "feature2", ...]
 }
 ```
 
-### Example Request:
-```curl
-curl -X POST http://0.0.0.0:5000/predict -H "Content-Type: application/json" -d '{
-    "features": {
-        "Type": "M",
-        "Air temperature [K]": 300,
-        "Process temperature [K]": 310,
-        "Rotational speed [rpm]": 1500,
-        "Torque [Nm]": 40,
-        "Tool wear [min]": 10
+### Available Models
+**Endpoint**: `/api/helper/available-models`
+
+**Method**: `GET`
+
+**Description**: Retrieves the list of available models from the configuration.
+
+**Response JSON format**:
+```json
+{
+    "available_models": ["model1", "model2", ...]
+}
+```
+
+### Training Progress
+**Endpoint**: `/api/helper/training-progress`
+
+**Method**: `GET`
+
+**Description**: Retrieves the training progress of the current model.
+
+
+### Model Results
+**Endpoint**: `/api/helper/model-results`
+
+**Method**: `GET`
+
+**Description**: Retrieves the results of the trained model.
+
+**Response JSON format**:
+```json
+{
+    "model_results": {
+        "accuracy": model_accuracy,
+        "precision": model_precision,
+        "recall": model_recall,
+        "f1_score": model_f1_score
     }
-}'
-```
-### Example Response:
-```json
-{
-    "prediction": "Not Failed"
 }
 ```
 
-## Running the Model Training Script
+### Predict Probabilities
+**Endpoint**: `/predict-probabilities`
 
-To train the model, use the following command:
-```sh
-python train_model.py
+**Method**: `POST`
+
+**Description**: Predicts the probabilities of equipment failure types using the specified model.
+
+**Request JSON format**:
+```json
+{
+    "model_name": "string",
+    "data": {
+        "sensor1": value1,
+        "sensor2": value2,
+        ...
+    }
+}
 ```
 
-## Running the Model Serving Script
-
-To serve the model, use the following command:
-```sh
-python serve_model.py
+**Response JSON format**:
+```json
+{
+    "probabilities": {
+        "failure_type_1": probability_1,
+        "failure_type_2": probability_2,
+        ...
+    }
+}
 ```
