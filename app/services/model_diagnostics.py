@@ -118,17 +118,49 @@ def get_roc_curve(
         labels = (test_data[config.TARGET_COLUMN] == class_label).astype(int)
         logger.info(f"Labels: {labels}")
         features = test_data.drop(columns=config.TARGET_COLUMN)
-        features = preprocessor.transform(features)
-        # Grab the predictions, probabilities
-        logger.info("Generating Model Predictions")
-        probabilities = model.predict_proba(features)[:, 1]
-        # Grab the AUC and ROC data
-        logger.info("Generating ROC Curve Data -- FPR, TPR")
-        logger.info(f"Probabilities: {probabilities}; Labels: {labels}")
-        fpr, tpr, _ = roc_curve(labels, probabilities)
-        logger.info("Grabbing AUC")
-        roc_auc = auc(fpr, tpr)
-        logger.debug(f"ROC AUC: {roc_auc}")
+        try:
+            features = preprocessor.transform(features)
+            logger.info(f"Features after preprocessing: {features[:5]}")
+        except Exception as e:
+            logger.error(f"Error preprocessing features: {e}")
+            return jsonify({"error": "Failed to preprocess features."}), 500
+
+        try:
+            # Grab the predictions, probabilities
+            logger.info("Generating Model Predictions")
+            probabilities = model.predict_proba(features)[:, 1]
+            logger.info(f"Probabilities: {probabilities}")
+        except Exception as e:
+            logger.error(f"Error generating model predictions: {e}")
+            return jsonify({"error": "Failed to generate model predictions."}), 500
+
+        try:
+            # Grab the AUC and ROC data
+            logger.info("Generating ROC Curve Data -- FPR, TPR")
+            fpr, tpr, _ = roc_curve(labels, probabilities)
+            logger.info("Grabbing AUC")
+            roc_auc = auc(fpr, tpr)
+            logger.debug(f"ROC AUC: {roc_auc}")
+        except Exception as e:
+            logger.error(f"Error generating ROC curve data: {e}")
+            return jsonify({"error": "Failed to generate ROC curve data."}), 500
+
+        # Return
+        return (
+            jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
+            200,
+        )
+        try:
+            # Grab the AUC and ROC data
+            logger.info("Generating ROC Curve Data -- FPR, TPR")
+            fpr, tpr, _ = roc_curve(labels, probabilities)
+            logger.info("Grabbing AUC")
+            roc_auc = auc(fpr, tpr)
+            logger.debug(f"ROC AUC: {roc_auc}")
+        except Exception as e:
+            logger.error(f"Error generating ROC curve data: {e}")
+            return jsonify({"error": "Failed to generate ROC curve data."}), 500
+
         # Return
         return (
             jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
@@ -169,6 +201,8 @@ def get_feature_importance(
     try:
         # Assuming the model has a feature_importances_ attribute
         feature_importances = model.feature_importances_
+        if not feature_names:
+            raise ValueError("Feature names list is empty or None.")
         feature_importance_dict = dict(zip(feature_names, feature_importances))
         logger.debug(f"Feature importances: {feature_importance_dict}")
         return jsonify({"feature_importance": feature_importance_dict})
@@ -184,5 +218,7 @@ def get_feature_importance(
             500,
         )
     except Exception as e:
+        logger.error(f"Error getting feature importance: {e}")
+        return jsonify({"error": str(e), "details": str(e)}), 500
         logger.error(f"Error getting feature importance: {e}")
         return jsonify({"error": str(e), "details": str(e)}), 500

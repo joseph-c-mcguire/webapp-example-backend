@@ -7,49 +7,128 @@ from app.services.model_diagnostics import (
     get_roc_curve,
     get_feature_importance,  # Import the get_feature_importance function
 )
+from flask import Flask
+from flask.testing import FlaskClient
+from app.routes.model_diagnostics import model_diagnostics_bp
 
 
 @pytest.fixture
-def app():
-    app = create_app()  # Use the create_app function to create the Flask app
+def app() -> Flask:
+    app = Flask(__name__)
+    app.register_blueprint(model_diagnostics_bp)
     return app
 
 
 @pytest.fixture
-def client(app):
+def client(app: Flask) -> FlaskClient:
     return app.test_client()
 
 
-# @patch("app.services.model_diagnostics.pd.read_csv")
-# @patch("app.services.model_diagnostics.Path.exists")
-# def test_get_confusion_matrix(mock_exists, mock_read_csv, client, app):
-#     mock_exists.return_value = True
-#     mock_read_csv.return_value = pd.DataFrame(
-#         {
-#             "Type": ["L", "M", "H"],
-#             "Air temperature [K]": [300, 305, 310],
-#             "Process temperature [K]": [310, 315, 320],
-#             "Rotational speed [rpm]": [1500, 1600, 1700],
-#             "Torque [Nm]": [40, 42, 44],
-#             "Tool wear [min]": [10, 20, 30],
-#         }
-#     )
+def test_confusion_matrix_endpoint(client: FlaskClient, monkeypatch):
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.ModelManager.load_model",
+        lambda *args, **kwargs: (None, None),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.joblib.load", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.get_confusion_matrix",
+        lambda *args, **kwargs: ({}, 200),
+    )
 
-#     model = MagicMock()
-#     preprocessor = MagicMock()
-#     model.predict.return_value = [0, 0]  # Adjusted to 2 samples
-#     preprocessor.transform.return_value = [
-#         [300, 310, 1500, 40, 10],
-#         [310, 320, 1700, 44, 30],
-#     ]  # Adjusted to 2 samples
+    response = client.post(
+        "/confusion-matrix",
+        json={"model_name": "Decision Tree", "class_label": "No Failure"},
+    )
+    assert response.status_code == 200
 
-#     with app.app_context():
-#         response = client.post(
-#             "/confusion-matrix",
-#             json={"model_name": "Decision Tree"},
-#         )
-#         assert response.status_code == 200
-#         # Add more assertions if needed to validate the response content
+
+def test_roc_curve_endpoint(client: FlaskClient, monkeypatch):
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.ModelManager.load_model",
+        lambda *args, **kwargs: (None, None),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.joblib.load", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.pd.read_csv",
+        lambda *args, **kwargs: pd.DataFrame(
+            {
+                "feature1": [1, 2, 3],
+                "feature2": [4, 5, 6],
+                "Failure Type": ["No Failure", "Failure", "No Failure"],
+            }
+        ),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.get_roc_curve", lambda *args, **kwargs: ({}, 200)
+    )
+
+    response = client.post(
+        "/roc-curve", json={"model_name": "Decision Tree", "class_label": "No Failure"}
+    )
+    if response.status_code != 200:
+        print(response.json)  # Log the error message for debugging
+    assert response.status_code == 200
+
+
+def test_roc_curve_endpoint_missing_json(client: FlaskClient):
+    response = client.post("/roc-curve")
+    assert response.status_code == 400
+    assert response.json["error"] == "Invalid or missing JSON data"
+
+
+def test_feature_importance_endpoint(client: FlaskClient, monkeypatch):
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.ModelManager.load_model",
+        lambda *args, **kwargs: (None, None),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.joblib.load",
+        lambda *args, **kwargs: MagicMock(get_feature_names_out=lambda: []),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.get_feature_importance",
+        lambda *args, **kwargs: ({}, 200),
+    )
+
+    response = client.get(
+        "/feature-importance", query_string={"model_name": "Gradient Boosting"}
+    )
+    assert response.status_code == 200
+
+
+def test_feature_importance_endpoint_missing_model(client: FlaskClient, monkeypatch):
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.ModelManager.load_model",
+        lambda *args, **kwargs: (None, "Model not found"),
+    )
+    response = client.get(
+        "/feature-importance", query_string={"model_name": "Decision Tree"}
+    )
+    assert response.status_code == 404
+    assert response.json["error"] == "Model not found"
+
+
+def test_feature_importance_endpoint_invalid_preprocessor(
+    client: FlaskClient, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.ModelManager.load_model",
+        lambda *args, **kwargs: (MagicMock(), None),
+    )
+    monkeypatch.setattr(
+        "app.routes.model_diagnostics.joblib.load",
+        lambda *args, **kwargs: MagicMock(get_feature_names_out=lambda: None),
+    )
+    response = client.get(
+        "/feature-importance", query_string={"model_name": "Decision Tree"}
+    )
+    assert response.status_code == 500
+    assert "error" in response.json
+    assert response.json["error"] == "Feature names list is empty or None."
 
 
 @patch("app.services.model_diagnostics.pd.read_csv")

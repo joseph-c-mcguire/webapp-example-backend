@@ -88,13 +88,10 @@ def roc_curve_endpoint() -> Tuple[Dict[str, Any], int]:
         JSON response with the false positive rate, true positive rate, and AUC.
     """
     try:
-        if not request.is_json:
-            logger.error("Request content type is not application/json")
-            return (
-                jsonify({"error": "Invalid content type. Expected application/json"}),
-                400,
-            )
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if data is None:
+            logger.error("Invalid or missing JSON data")
+            return jsonify({"error": "Invalid or missing JSON data"}), 400
         logger.debug(f"Received JSON data: {data}")
         model_name: str = data.get("model_name", "Decision Tree")
         class_label: str = data.get("class_label", "No Failure")

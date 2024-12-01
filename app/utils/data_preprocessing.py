@@ -59,10 +59,26 @@ def preprocess_data(
     )
 
     # Fit the column transformer and transform the data
-    scaled_data = preprocessor.fit_transform(data)
+    transformed_data = preprocessor.fit_transform(data)
+
+    # Get the new column names after transformation
+    new_columns = []
+    for name, transformer, columns in preprocessor.transformers:
+        if name == "drop_columns":
+            continue
+        if name == "scale_columns":
+            new_columns.extend(columns)
+        if name == "encode_columns":
+            encoder = preprocessor.named_transformers_["encode_columns"]
+            encoded_columns = encoder.get_feature_names_out(columns)
+            new_columns.extend(encoded_columns)
+
+    # Create the preprocessed DataFrame with the new columns
+    preprocessed_data = pd.DataFrame(transformed_data, columns=new_columns)
+
     logger.info("Data preprocessing completed")
 
-    return preprocessor, scaled_data
+    return preprocessor, preprocessed_data
 
 
 def split_data(
