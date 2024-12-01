@@ -1,10 +1,10 @@
+from typing import Optional
 import logging
 import pandas as pd
 import numpy as np  # Add this import
 from flask import jsonify
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from app.config import Config
-from pathlib import Path  # Import Path
 
 logger = logging.getLogger(__name__)
 
@@ -150,22 +150,6 @@ def get_roc_curve(
             jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
             200,
         )
-        try:
-            # Grab the AUC and ROC data
-            logger.info("Generating ROC Curve Data -- FPR, TPR")
-            fpr, tpr, _ = roc_curve(labels, probabilities)
-            logger.info("Grabbing AUC")
-            roc_auc = auc(fpr, tpr)
-            logger.debug(f"ROC AUC: {roc_auc}")
-        except Exception as e:
-            logger.error(f"Error generating ROC curve data: {e}")
-            return jsonify({"error": "Failed to generate ROC curve data."}), 500
-
-        # Return
-        return (
-            jsonify({"fpr": fpr.tolist(), "tpr": tpr.tolist(), "roc_auc": roc_auc}),
-            200,
-        )
     except KeyError as e:
         logger.error(f"Class label '{class_label}' not found in model classes: {e}")
         return (
@@ -180,7 +164,7 @@ def get_roc_curve(
 
 
 def get_feature_importance(
-    model: "BaseEstimator", feature_names: list
+    model: "BaseEstimator", feature_names: Optional[list] = None
 ) -> "flask.Response":
     """
     Get the feature importance of the specified model.
@@ -201,7 +185,7 @@ def get_feature_importance(
     try:
         # Assuming the model has a feature_importances_ attribute
         feature_importances = model.feature_importances_
-        if not feature_names:
+        if feature_names is None or len(feature_names) == 0:
             raise ValueError("Feature names list is empty or None.")
         feature_importance_dict = dict(zip(feature_names, feature_importances))
         logger.debug(f"Feature importances: {feature_importance_dict}")
@@ -218,7 +202,5 @@ def get_feature_importance(
             500,
         )
     except Exception as e:
-        logger.error(f"Error getting feature importance: {e}")
-        return jsonify({"error": str(e), "details": str(e)}), 500
         logger.error(f"Error getting feature importance: {e}")
         return jsonify({"error": str(e), "details": str(e)}), 500
